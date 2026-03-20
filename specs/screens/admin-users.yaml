@@ -1,0 +1,163 @@
+version: "2.0"
+
+screen:
+  name: 사용자 관리
+  route: "/admin/users"
+  layout: sidebar-main
+  auth: true
+
+data_requirements:
+  - resource: users
+    needs: [id, email, nickname, industry, company_size, created_at, role]
+    auth_required: true
+  - resource: dna_sessions
+    needs: [id, user_id, completed_at]
+    auth_required: true
+  - resource: question_responses
+    needs: [id, user_id, created_at]
+    auth_required: true
+  - resource: participation_history
+    needs: [id, user_id, action_type, created_at]
+    auth_required: true
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "사용자 관리" 제목
+
+  - id: user_stat_cards
+    type: card
+    position: main
+    function: 사용자 통계 4가지 (총 가입, 활성, 재참여율, 평균 세션)
+    data_source:
+      resource: users, participation_history
+
+  - id: stat_card_1
+    type: card
+    position: main
+    function: "총 가입자: 157명" 카드
+    data_source:
+      resource: users
+
+  - id: stat_card_2
+    type: card
+    position: main
+    function: "활성 사용자 (30일): 87명" 카드
+    data_source:
+      resource: participation_history
+
+  - id: stat_card_3
+    type: card
+    position: main
+    function: "재참여율: 38%" 카드
+    data_source:
+      resource: participation_history
+
+  - id: stat_card_4
+    type: card
+    position: main
+    function: "평균 세션: 8.3분" 카드
+    data_source:
+      resource: participation_history
+
+  - id: demographic_charts
+    type: chart
+    position: main
+    function: 산업군별 분포 (파이 차트)
+    data_source:
+      resource: users
+
+  - id: company_size_chart
+    type: chart
+    position: main
+    function: 회사 규모별 분포 (가로 막대)
+    data_source:
+      resource: users
+
+  - id: search_bar
+    type: form
+    position: main
+    function: 사용자 이메일 또는 닉네임 검색
+    events:
+      - on: change
+        do: 실시간 사용자 필터링
+
+  - id: filter_section
+    type: form
+    position: main
+    function: 필터 ([산업군] [회사규모] [활성상태])
+    events:
+      - on: change
+        do: 필터 조건 적용
+
+  - id: user_table
+    type: list
+    position: main
+    function: 사용자 리스트 (테이블)
+    data_source:
+      resource: users
+    events:
+      - on: scroll
+        do: 페이지네이션 로드
+
+  - id: user_row
+    type: card
+    position: main
+    function: 개별 사용자 항목 (ID, 닉네임, 이메일, 가입일, 산업, 진단, 참여)
+    data_source:
+      resource: users, dna_sessions, question_responses
+    events:
+      - on: click
+        do: 사용자 상세 조회
+
+  - id: user_action_buttons
+    type: card
+    position: main
+    function: "[상세] [강제 로그아웃]" 버튼
+    events:
+      - on: click
+        do: 각 액션 수행
+
+  - id: cohort_analysis_chart
+    type: chart
+    position: main
+    function: 가입 주차별 재참여율 분석
+    data_source:
+      resource: users, participation_history
+
+  - id: export_button
+    type: form
+    position: main
+    function: "[CSV 내보내기]" 버튼 (선택)
+    events:
+      - on: click
+        do: 사용자 데이터 CSV 다운로드
+
+connections:
+  navigations: []
+
+  shared_components:
+    - Header
+    - AdminMenu
+
+tests:
+  - name: 사용자 통계 로드
+    when: 관리자가 /admin/users 페이지 접근
+    then:
+      - users 테이블에서 총 가입자 수 조회
+      - 활성 사용자 (30일 내 활동) 계산
+      - 통계 카드 표시됨
+
+  - name: 사용자 검색 및 필터링
+    when: 관리자가 검색창에 닉네임 입력 또는 산업 필터 선택
+    then:
+      - 실시간으로 users 테이블 필터링
+      - 해당 조건의 사용자만 테이블에 표시됨
+
+  - name: 인구통계 분석
+    when: 대시보드 로드 완료
+    then:
+      - users.industry별 분포 계산
+      - users.company_size별 분포 계산
+      - 파이 차트 및 막대 차트 렌더링됨

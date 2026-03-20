@@ -1,0 +1,100 @@
+version: "2.0"
+
+screen:
+  name: DNA 진단
+  route: "/diagnosis"
+  layout: full-width
+  auth: false
+
+data_requirements:
+  - resource: dna_sessions
+    needs: [id, version, status]
+    auth_required: false
+  - resource: dna_responses
+    needs: [id, session_id, question_id, value]
+    auth_required: false
+
+components:
+  - id: version_selector
+    type: card
+    position: main
+    function: 세미/풀 버전 선택 제시
+    events:
+      - on: click
+        do: 선택된 버전으로 진단 시작
+
+  - id: progress_bar
+    type: card
+    position: header
+    function: 진행률 표시 (예: 5/12)
+    data_source:
+      resource: dna_sessions
+
+  - id: question_number
+    type: card
+    position: main
+    function: 현재 문항 번호 표시 (1/12)
+
+  - id: question_text
+    type: card
+    position: main
+    function: 진단 질문 텍스트 렌더링
+    data_source:
+      resource: dna_responses
+
+  - id: likert_scale
+    type: form
+    position: main
+    function: 7점 척도 입력 (라디오 또는 슬라이더)
+    events:
+      - on: click
+        do: 선택 값 상태 업데이트
+      - on: change
+        do: "다음" 버튼 활성화
+
+  - id: navigation_buttons
+    type: card
+    position: main
+    function: "[이전] [다음]" 네비게이션
+    events:
+      - on: click
+        do: 페이지 변경 또는 완료 처리
+
+  - id: loading_state
+    type: card
+    position: main
+    function: 완료 후 "결과 계산 중..." 메시지
+    events:
+      - on: load
+        do: "/result/:sessionId로 자동 리다이렉트"
+
+connections:
+  navigations:
+    - from: version_selector
+      to: "/diagnosis"
+    - from: navigation_buttons
+      to: "/result/:sessionId"
+
+  shared_components: []
+
+tests:
+  - name: 버전 선택 및 진단 시작
+    when: 사용자가 진단 페이지에 접근하여 세미 또는 풀 버전 선택
+    then:
+      - dna_sessions 신규 레코드 생성 (version, status: in_progress)
+      - 진행률 바 0% 표시됨
+      - 첫 번째 문항 로드됨
+
+  - name: 문항 응답 및 진행
+    when: 사용자가 7점 척도에서 값 선택 후 [다음] 클릭
+    then:
+      - dna_responses에 레코드 저장됨
+      - 진행률 증가 (5/12 등)
+      - 다음 문항 로드됨
+
+  - name: 진단 완료 및 리다이렉트
+    when: 마지막 문항 완료 후 [다음] 클릭
+    then:
+      - dna_sessions.status = 'completed' 업데이트
+      - 점수 계산 시작 (백그라운드)
+      - "/result/:sessionId로 리다이렉트"

@@ -1,0 +1,129 @@
+version: "2.0"
+
+screen:
+  name: DNA 결과
+  route: "/result/:sessionId"
+  layout: full-width
+  auth: false
+
+data_requirements:
+  - resource: dna_results
+    needs: [id, session_id, p_score, c_score, pol_score, s_score, persona_label, persona_description, share_token, version]
+    filters:
+      session_id: ":sessionId"
+    auth_required: false
+  - resource: dna_sessions
+    needs: [id, version, status]
+    filters:
+      id: ":sessionId"
+    auth_required: false
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "당신의 Work DNA" 제목 표시
+
+  - id: radar_chart
+    type: chart
+    position: main
+    function: 4축 레이더 차트 시각화 (반응형 크기)
+    data_source:
+      resource: dna_results
+
+  - id: score_display
+    type: card
+    position: main
+    function: "P: 72 | C: 45 | Pol: 38 | S: 61" 점수 텍스트
+    data_source:
+      resource: dna_results
+
+  - id: persona_badge
+    type: card
+    position: main
+    function: 페르소나 라벨 배지 표시
+    data_source:
+      resource: dna_results
+
+  - id: description_section
+    type: detail
+    position: main
+    function: 페르소나 설명 + 각 축별 설명 렌더링
+    data_source:
+      resource: dna_results
+
+  - id: reference_personas
+    type: list
+    position: main
+    function: 비슷한 유형 3~4개 제시 (선택)
+    data_source:
+      resource: dna_results
+
+  - id: share_buttons
+    type: card
+    position: main
+    function: SNS 공유 버튼 (Twitter, Facebook, Kakao)
+    events:
+      - on: click
+        do: "해당 SNS 공유 링크 생성 및 이동"
+
+  - id: copy_link_button
+    type: form
+    position: main
+    function: 링크 복사 버튼
+    events:
+      - on: click
+        do: "share_token 기반 공유 링크를 클립보드에 복사"
+
+  - id: save_result_button
+    type: form
+    position: main
+    function: "결과 저장 (가입 유도)" Primary 버튼
+    events:
+      - on: click
+        do: "/signup 또는 가입 게이트로 이동"
+
+  - id: upgrade_section
+    type: card
+    position: main
+    function: 세미 진단 시 풀 버전 업그레이드 제안
+    events:
+      - on: click
+        do: "/diagnosis로 이동 (풀 버전 선택)"
+
+  - id: footer_message
+    type: card
+    position: footer
+    function: 비회원용 가입 유도 메시지
+
+connections:
+  navigations:
+    - from: save_result_button
+      to: "/signup"
+    - from: upgrade_section
+      to: "/diagnosis"
+
+  shared_components:
+    - Header
+    - ShareButtons
+
+tests:
+  - name: 결과 로드 및 차트 렌더링
+    when: "유효한 sessionId로 /result 페이지 접근"
+    then:
+      - dna_results에서 레코드 로드됨
+      - RadarChart에 정규화된 점수 표시됨
+      - 페르소나 라벨 및 설명 표시됨
+
+  - name: 공유 링크 생성
+    when: 사용자가 공유 버튼 클릭
+    then:
+      - share_token 기반 공유 링크 생성됨
+      - "/share/:shareId URL 형식으로 제시됨
+      - SNS 공유 시 OG 이미지 동적 생성 가능
+
+  - name: 가입 게이트 트리거
+    when: 비회원이 "[결과 저장]" 버튼 클릭"
+    then:
+      - "/signup 페이지로 이동"
+      - 결과 저장 플로우 시작됨

@@ -1,0 +1,146 @@
+version: "2.0"
+
+screen:
+  name: 질문 관리
+  route: "/admin/questions"
+  layout: sidebar-main
+  auth: true
+
+data_requirements:
+  - resource: questions
+    needs: [id, title, type, status, is_featured, participant_count, created_at, deadline]
+    auth_required: true
+  - resource: suggestions
+    needs: [id, user_id, title, background, status, shout_out_count, created_at]
+    filters:
+      status: "pending"
+    auth_required: true
+  - resource: users
+    needs: [id, nickname]
+    auth_required: true
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "질문 관리" 제목 + "[새 질문 추가]" 버튼
+    events:
+      - on: click
+        do: 질문 생성 모달 열기
+
+  - id: filter_tabs
+    type: form
+    position: header
+    function: 상태별 필터 탭 ([모든 질문] [초안] [배포중] [마감] [제안 검토])
+    events:
+      - on: click
+        do: 해당 상태의 질문만 필터링
+
+  - id: question_table
+    type: list
+    position: main
+    function: 질문 리스트 (테이블 또는 카드)
+    data_source:
+      resource: questions
+    events:
+      - on: scroll
+        do: 페이지네이션 로드
+
+  - id: question_row
+    type: card
+    position: main
+    function: 개별 질문 항목 (ID, 제목, 상태, 참여도, 배포일)
+    data_source:
+      resource: questions
+    events:
+      - on: click
+        do: 질문 상세 보기 또는 수정 모달
+
+  - id: question_action_buttons
+    type: card
+    position: main
+    function: "[수정] [마감] [삭제]" 또는 "[결과보기] [재배포] [삭제]"
+    events:
+      - on: click
+        do: 각 액션 수행
+
+  - id: create_question_modal
+    type: form
+    position: overlay
+    function: 질문 생성 폼 (단순/다문항 선택)
+    events:
+      - on: submit
+        do: "questions 테이블에 신규 레코드 추가"
+
+  - id: question_form_fields
+    type: form
+    position: overlay
+    function: 질문 제목, 설명, 타입, 옵션 입력 필드
+    events:
+      - on: change
+        do: 폼 검증
+
+  - id: suggestion_review_section
+    type: detail
+    position: main
+    function: "제안 검토" 탭 - 대기중인 제안 목록
+    data_source:
+      resource: suggestions
+
+  - id: suggestion_review_card
+    type: card
+    position: main
+    function: 개별 제안 항목 (제목, 제안자, 배경, Shout out, 액션)
+    data_source:
+      resource: suggestions
+    events:
+      - on: click
+        do: 제안 상세 보기
+
+  - id: approve_button
+    type: form
+    position: main
+    function: "[채택]" 버튼 (제안 → 질문 변환)
+    events:
+      - on: click
+        do: "suggestions.status = 'approved', 질문 생성 모달 열기"
+
+  - id: reject_button
+    type: form
+    position: main
+    function: "[반려]" 버튼
+    events:
+      - on: click
+        do: "suggestions.status = 'rejected', 사용자에게 알림"
+
+connections:
+  navigations:
+    - from: header
+      to: "/admin/questions"
+    - from: filter_tabs
+      to: "/admin/questions"
+
+  shared_components:
+    - Header
+    - AdminMenu
+
+tests:
+  - name: 질문 리스트 필터링
+    when: 관리자가 "[배포중]" 탭 클릭
+    then:
+      - status = 'active'인 질문만 표시됨
+      - 테이블/카드 업데이트됨
+
+  - name: 새 질문 생성
+    when: 관리자가 "[새 질문 추가]" 클릭 후 폼 작성"
+    then:
+      - questions 테이블에 신규 레코드 생성
+      - status = 'draft' 설정
+      - 리스트에 즉시 반영됨
+
+  - name: 제안 채택 및 질문 생성
+    when: 관리자가 제안 "[채택]" 버튼 클릭"
+    then:
+      - suggestions.status = 'approved' 업데이트
+      - questions에 신규 레코드 생성 (title, description 자동 채우기)
+      - 사용자에게 "제안이 채택되었습니다" 알림 전송

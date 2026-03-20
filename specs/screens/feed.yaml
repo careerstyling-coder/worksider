@@ -1,0 +1,150 @@
+version: "2.0"
+
+screen:
+  name: 피드 (메인)
+  route: "/feed"
+  layout: sidebar-main
+  auth: false
+
+data_requirements:
+  - resource: questions
+    needs: [id, title, type, status, is_featured, deadline, participant_count, created_at]
+    filters:
+      status: "active"
+    auth_required: false
+  - resource: question_responses
+    needs: [id, question_id, user_id, selected_option]
+    filters:
+      user_id: "current_user"
+    auth_required: false
+  - resource: suggestions
+    needs: [id, user_id, title, status, shout_out_count, created_at]
+    filters:
+      status: "approved"
+    auth_required: false
+  - resource: participation_history
+    needs: [id, user_id, action_type]
+    filters:
+      user_id: "current_user"
+    auth_required: false
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "피드" 또는 "커뮤니티" 제목
+
+  - id: filter_tabs
+    type: form
+    position: header
+    function: 필터 탭 ([전체] [진행중] [마감] [내 참여])
+    events:
+      - on: click
+        do: 해당 상태의 질문만 필터링
+
+  - id: featured_question_card
+    type: card
+    position: main
+    function: 채택된 질문 고정 상단 표시 (배경 강조)
+    data_source:
+      resource: questions
+    events:
+      - on: click
+        do: "/question/:questionId로 이동"
+
+  - id: question_list
+    type: list
+    position: main
+    function: 질문 카드 리스트 (진행중/마감)
+    data_source:
+      resource: questions
+    events:
+      - on: scroll
+        do: 페이지네이션 또는 무한 스크롤 로드
+
+  - id: question_card
+    type: card
+    position: main
+    function: 개별 질문 항목 (제목, 상태, 마감, 참여도)
+    data_source:
+      resource: questions
+    events:
+      - on: click
+        do: "/question/:questionId로 이동"
+
+  - id: participation_status_badge
+    type: card
+    position: main
+    function: 사용자 참여 상태 배지 ([참여하기] 또는 [완료됨])
+    data_source:
+      resource: question_responses
+    events:
+      - on: click
+        do: "/question/:questionId로 이동"
+
+  - id: suggestion_list_section
+    type: detail
+    position: main
+    function: 커뮤니티 제안 리스트 섹션
+    data_source:
+      resource: suggestions
+
+  - id: suggestion_card
+    type: card
+    position: main
+    function: 제안 카드 (제목, 제안자, Shout out 수)
+    data_source:
+      resource: suggestions
+    events:
+      - on: click
+        do: "[응원하기]" Shout out 추가
+
+  - id: shout_out_button
+    type: form
+    position: main
+    function: 하트 아이콘 버튼 (Shout out)
+    events:
+      - on: click
+        do: "shout_outs 테이블에 레코드 추가, 수 증가"
+
+  - id: floating_action_button
+    type: form
+    position: footer
+    function: "[새로운 질문 제안]" Floating Button
+    events:
+      - on: click
+        do: "/suggest로 이동"
+
+connections:
+  navigations:
+    - from: featured_question_card
+      to: "/question/:questionId"
+    - from: question_card
+      to: "/question/:questionId"
+    - from: floating_action_button
+      to: "/suggest"
+
+  shared_components:
+    - Header
+    - FilterTabs
+    - FloatingActionButton
+
+tests:
+  - name: 피드 필터링
+    when: 사용자가 "[진행중]" 탭 클릭
+    then:
+      - 활성 상태 (status='active')의 질문만 표시됨
+      - 필터 탭 상태 업데이트됨
+
+  - name: 질문 참여 상태 표시
+    when: 인증된 사용자가 피드 접근
+    then:
+      - 자신이 응답한 질문에 "[완료됨]" 배지 표시됨
+      - 미응답 질문에 "[참여하기]" 버튼 표시됨
+
+  - name: Shout out 추가
+    when: 사용자가 제안 카드의 하트 아이콘 클릭
+    then:
+      - shout_outs 테이블에 레코드 추가
+      - suggestion.shout_out_count 증가
+      - UI에 실시간 반영됨

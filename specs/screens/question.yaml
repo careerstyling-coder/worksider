@@ -1,0 +1,151 @@
+version: "2.0"
+
+screen:
+  name: 질문 참여
+  route: "/question/:questionId"
+  layout: full-width
+  auth: false
+
+data_requirements:
+  - resource: questions
+    needs: [id, title, description, type, status, options, participant_count, deadline]
+    filters:
+      id: ":questionId"
+    auth_required: false
+  - resource: question_responses
+    needs: [id, question_id, user_id, selected_option]
+    filters:
+      question_id: ":questionId"
+      user_id: "current_user"
+    auth_required: false
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: 뒤로가기 버튼 + "질문에 참여하세요" 제목
+    events:
+      - on: click
+        do: 이전 페이지로 이동
+
+  - id: question_card
+    type: detail
+    position: main
+    function: 질문 제목, 설명, 상태, 참여도 표시
+    data_source:
+      resource: questions
+
+  - id: progress_bar
+    type: card
+    position: main
+    function: 진행률 바 (선택사항)
+    data_source:
+      resource: questions
+
+  - id: question_status
+    type: card
+    position: main
+    function: 상태 배지 (진행중 / 마감) + 남은 시간 표시
+    data_source:
+      resource: questions
+
+  - id: participant_count
+    type: card
+    position: main
+    function: "456명 참여" 텍스트
+    data_source:
+      resource: questions
+
+  - id: option_selector
+    type: form
+    position: main
+    function: 라디오 버튼 또는 카드 선택형 옵션 제시
+    data_source:
+      resource: questions
+    events:
+      - on: click
+        do: 선택된 옵션 상태 업데이트
+
+  - id: option_card
+    type: card
+    position: main
+    function: 개별 선택지 (Option 1, 2, 3 등)
+    events:
+      - on: click
+        do: 선택 상태 토글
+
+  - id: guest_warning_banner
+    type: card
+    position: main
+    function: 비회원 경고 (결과 조회 권한 없음)
+    events:
+      - on: click
+        do: "/signup 또는 가입 모달 열기"
+
+  - id: navigation_buttons
+    type: card
+    position: main
+    function: "[이전 질문] [다음 질문]" 네비게이션
+    events:
+      - on: click
+        do: 해당 질문으로 이동
+
+  - id: submit_button
+    type: form
+    position: main
+    function: "[제출]" Primary 버튼
+    events:
+      - on: click
+        do: "question_responses 레코드 추가, 확인 메시지 표시"
+
+  - id: confirmation_message
+    type: card
+    position: main
+    function: "응답이 저장되었습니다" 체크 아이콘 메시지
+    events:
+      - on: load
+        do: 일정 시간 후 자동 해제 또는 유지
+
+  - id: result_view_link
+    type: form
+    position: main
+    function: "[결과 보기]" 링크
+    events:
+      - on: click
+        do: "/question/:questionId/result로 이동"
+
+connections:
+  navigations:
+    - from: option_selector
+      to: "/question/:questionId/result"
+    - from: guest_warning_banner
+      to: "/signup"
+    - from: navigation_buttons
+      to: "/question/:nextQuestionId"
+    - from: result_view_link
+      to: "/question/:questionId/result"
+
+  shared_components:
+    - Header
+
+tests:
+  - name: 질문 로드 및 옵션 표시
+    when: "유효한 questionId로 /question 페이지 접근"
+    then:
+      - questions 테이블에서 해당 질문 로드
+      - 제목, 설명, 옵션이 표시됨
+      - 참여도 표시됨
+
+  - name: 옵션 선택 및 제출
+    when: 사용자가 선택지 선택 후 [제출] 클릭
+    then:
+      - question_responses에 레코드 추가 (selected_option)
+      - 확인 메시지 표시됨
+      - "[결과 보기]" 링크 활성화됨
+
+  - name: 비회원 응답 및 게이트
+    when: 비회원이 응답 제출
+    then:
+      - 익명으로 응답 저장 (user_id: null)
+      - "결과를 보려면 가입하세요" 경고 표시됨
+      - 가입 유도 모달/배너 제시됨

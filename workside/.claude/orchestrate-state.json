@@ -1,0 +1,40 @@
+{
+  "version": "2.0",
+  "mode": "standard",
+  "project_root": "/Users/maegbugpeulo/worksider/workside",
+  "specs_root": "/Users/maegbugpeulo/worksider/specs",
+  "tasks_file": "/Users/maegbugpeulo/worksider/docs/planning/06-tasks.md",
+
+  "execution": {
+    "current_phase": 0,
+    "started_at": "2026-03-17T00:00:00Z",
+    "last_updated": "2026-03-17T00:00:00Z"
+  },
+
+  "tasks": {
+    "completed": ["P0-T0.1", "P0-T0.2"],
+    "in_progress": [],
+    "ready": ["P0-T0.3", "P0-T0.4"],
+    "pending": [
+      "P1-R1-T1", "P1-R1-T2", "P1-R1-T3",
+      "P1-S0-T1", "P1-S0-T2", "P1-S0-T3",
+      "P2-R1-T1", "P2-R1-T2", "P2-R2-T1", "P2-R2-T2", "P2-R2-T3", "P2-R2-T4",
+      "P2-S1-T1", "P2-S2-T1", "P2-S2-T2", "P2-S3-T1", "P2-S3-T2", "P2-S4-T1", "P2-S5-T1", "P2-S5-T2",
+      "P2-S1-V", "P2-S2-V", "P2-S3-V", "P2-S4-V", "P2-S5-V",
+      "P3-R1-T1", "P3-R1-T2", "P3-R2-T1", "P3-R2-T2", "P3-R3-T1",
+      "P3-S1-T1", "P3-S1-T2", "P3-S2-T1", "P3-S3-T1", "P3-S3-T2", "P3-S4-T1",
+      "P3-S1-V", "P3-S2-V", "P3-S3-V", "P3-S4-V",
+      "P4-S1-T1", "P4-S1-T2", "P4-S1-V",
+      "P5-R1-T1",
+      "P5-S1-T1", "P5-S1-T2", "P5-S2-T1", "P5-S2-T2", "P5-S3-T1", "P5-S3-T2",
+      "P5-S1-V", "P5-S2-V", "P5-S3-V"
+    ],
+    "failed": []
+  },
+
+  "checkpoints": {},
+  "config": {
+    "max_parallel": 3,
+    "retry_limit": 5
+  }
+}

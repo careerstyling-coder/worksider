@@ -1,0 +1,450 @@
+version: "2.0"
+
+shared_types:
+  description: Workside 플랫폼에서 사용되는 공통 데이터 타입 및 인터페이스
+  generated_at: "2026-03-16"
+
+  core_entities:
+    - name: User
+      description: 플랫폼 사용자
+      fields:
+        id:
+          type: uuid
+          description: 사용자 고유 ID
+
+        email:
+          type: string
+          constraints: [unique, email_format]
+
+        nickname:
+          type: string
+          constraints: [unique, min_length:2, max_length:20]
+
+        password_hash:
+          type: string
+          description: 해시된 비밀번호
+
+        industry:
+          type: string
+          nullable: true
+          enum: [IT, Finance, Manufacturing, Service, Other]
+
+        company_size:
+          type: string
+          nullable: true
+          enum: [startup_s, medium_m, large_l, xlarge_xl]
+
+        role:
+          type: enum
+          values: [user, admin]
+          default: user
+
+        created_at:
+          type: timestamp
+
+        updated_at:
+          type: timestamp
+
+    - name: DNAResult
+      description: DNA 진단 결과
+      fields:
+        id:
+          type: uuid
+
+        session_id:
+          type: uuid
+          ref: dna_sessions.id
+
+        user_id:
+          type: uuid
+          nullable: true
+          ref: users.id
+          description: 비회원 응답의 경우 null
+
+        p_score:
+          type: number
+          range: [0, 100]
+          description: "P축: 실무 중심성"
+
+        c_score:
+          type: number
+          range: [0, 100]
+          description: "C축: 협력도"
+
+        pol_score:
+          type: number
+          range: [0, 100]
+          description: "Pol축: 조직정치감수성"
+
+        s_score:
+          type: number
+          range: [0, 100]
+          description: "S축: 자율성 추구도"
+
+        persona_label:
+          type: string
+          example: "전략적 성과자"
+          description: 4축 조합에 따른 페르소나 라벨
+
+        persona_description:
+          type: text
+          description: 페르소나 설명 (200자 내외)
+
+        version:
+          type: enum
+          values: [semi, full]
+          description: 진단 버전
+
+        share_token:
+          type: string
+          unique: true
+          description: 공유용 토큰 (UUID)
+
+        created_at:
+          type: timestamp
+
+    - name: Question
+      description: 커뮤니티 질문
+      fields:
+        id:
+          type: uuid
+
+        title:
+          type: string
+          max_length: 200
+
+        description:
+          type: text
+          nullable: true
+
+        type:
+          type: enum
+          values: [simple, survey]
+          description: "simple: 단일 선택, survey: 다문항"
+
+        status:
+          type: enum
+          values: [draft, active, closed]
+
+        is_featured:
+          type: boolean
+          default: false
+          description: 피드 상단 고정 여부
+
+        options:
+          type: jsonb
+          schema:
+            - id: string
+              label: string
+
+        created_by:
+          type: uuid
+          ref: users.id
+          description: 질문 생성자 (관리자)
+
+        suggestion_id:
+          type: uuid
+          nullable: true
+          ref: suggestions.id
+          description: 제안에서 채택된 경우
+
+        deadline:
+          type: timestamp
+          nullable: true
+
+        participant_count:
+          type: number
+          default: 0
+          description: 응답 사용자 수 (계산)
+
+        created_at:
+          type: timestamp
+
+    - name: QuestionResponse
+      description: 질문에 대한 응답
+      fields:
+        id:
+          type: uuid
+
+        question_id:
+          type: uuid
+          ref: questions.id
+
+        user_id:
+          type: uuid
+          ref: users.id
+          description: 비회원도 응답 가능 (user_id: null)
+
+        selected_option:
+          type: string
+          description: 선택된 옵션 ID 또는 라벨
+
+        persona_label:
+          type: string
+          nullable: true
+          description: 응답자의 페르소나 (회원만)
+
+        created_at:
+          type: timestamp
+
+    - name: Suggestion
+      description: 사용자가 제안한 질문
+      fields:
+        id:
+          type: uuid
+
+        user_id:
+          type: uuid
+          ref: users.id
+
+        title:
+          type: string
+          max_length: 500
+
+        background:
+          type: text
+          description: 제안 배경 및 근거
+
+        status:
+          type: enum
+          values: [pending, approved, rejected]
+          default: pending
+
+        shout_out_count:
+          type: number
+          default: 0
+          description: Shout out 응원 수
+
+        created_at:
+          type: timestamp
+
+    - name: ShoutOut
+      description: 제안에 대한 응원
+      fields:
+        id:
+          type: uuid
+
+        suggestion_id:
+          type: uuid
+          ref: suggestions.id
+
+        user_id:
+          type: uuid
+          ref: users.id
+
+        created_at:
+          type: timestamp
+
+    - name: DNASession
+      description: DNA 진단 세션
+      fields:
+        id:
+          type: uuid
+
+        user_id:
+          type: uuid
+          nullable: true
+          ref: users.id
+
+        version:
+          type: enum
+          values: [semi, full]
+
+        status:
+          type: enum
+          values: [in_progress, completed]
+
+        share_token:
+          type: string
+          unique: true
+          nullable: true
+
+        created_at:
+          type: timestamp
+
+        completed_at:
+          type: timestamp
+          nullable: true
+
+    - name: ParticipationHistory
+      description: 사용자 활동 이력
+      fields:
+        id:
+          type: uuid
+
+        user_id:
+          type: uuid
+          ref: users.id
+
+        action_type:
+          type: enum
+          values: [diagnosis, question, suggestion, share, shout_out]
+
+        target_id:
+          type: uuid
+          description: 대상 리소스 ID
+
+        created_at:
+          type: timestamp
+
+  derived_types:
+    - name: Persona
+      description: DNA 진단 결과로부터 도출되는 페르소나
+      attributes:
+        label: string
+        description: string
+        characteristics: string[]
+        similar_personas: string[]
+        recommendation: string
+
+    - name: QuestionResultAggregate
+      description: 질문 응답의 집계 결과
+      fields:
+        question_id: uuid
+        total_responses: number
+        options_distribution:
+          - option_id: string
+            option_label: string
+            count: number
+            percentage: number
+            persona_breakdown:
+              - persona_label: string
+                count: number
+
+    - name: DNAScoresNormalized
+      description: 정규화된 DNA 점수 (0-100)
+      fields:
+        p_score: number
+        c_score: number
+        pol_score: number
+        s_score: number
+        max_score: number
+
+    - name: PersonaDistribution
+      description: 페르소나별 분포
+      fields:
+        persona_label: string
+        count: number
+        percentage: number
+
+  enums:
+    UserRole:
+      values: [user, admin]
+
+    UserStatus:
+      values: [active, inactive, suspended]
+
+    QuestionType:
+      values: [simple, survey]
+
+    QuestionStatus:
+      values: [draft, active, closed]
+
+    SuggestionStatus:
+      values: [pending, approved, rejected]
+
+    DNAVersion:
+      values: [semi, full]
+
+    ActionType:
+      values: [diagnosis, question, suggestion, share, shout_out]
+
+    Industry:
+      values: [IT, Finance, Manufacturing, Service, Other]
+
+    CompanySize:
+      values: [startup_s, medium_m, large_l, xlarge_xl]
+
+    PersonaLabel:
+      values:
+        - "전략적 성과자"
+        - "실무형 전문가"
+        - "협력적 조정자"
+        - "자율형 독립가"
+        - "조직형 정치인"
+        - "중도형 균형가"
+
+  validation_rules:
+    User:
+      email:
+        - format: email
+        - unique: true
+        - required: true
+
+      nickname:
+        - min_length: 2
+        - max_length: 20
+        - unique: true
+        - required: true
+        - pattern: "^[a-zA-Z0-9_]+$"
+
+      password:
+        - min_length: 8
+        - pattern: "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$"
+        - required: true
+
+    Question:
+      title:
+        - min_length: 5
+        - max_length: 200
+        - required: true
+
+      options:
+        - min_items: 2
+        - max_items: 10
+        - required: true
+
+    Suggestion:
+      title:
+        - min_length: 10
+        - max_length: 500
+        - required: true
+
+      background:
+        - min_length: 20
+        - max_length: 2000
+        - nullable: true
+
+  api_response_patterns:
+    Success:
+      status: 200 | 201
+      body:
+        success: true
+        data: <resource>
+        timestamp: timestamp
+
+    Error:
+      status: 400 | 401 | 404 | 500
+      body:
+        success: false
+        error:
+          code: string
+          message: string
+          details: object (optional)
+        timestamp: timestamp
+
+  pagination:
+    default_limit: 10
+    max_limit: 100
+    offset_based: true
+    parameters:
+      - name: limit
+        type: number
+        default: 10
+
+      - name: offset
+        type: number
+        default: 0
+
+      - name: sort
+        type: string
+        format: "field:asc|desc"
+
+  timestamps:
+    format: "ISO 8601"
+    timezone: "UTC"
+    fields:
+      - created_at
+      - updated_at
+      - completed_at
+      - deadline

@@ -1,0 +1,51 @@
+{
+  "completed_skills": ["neurion", "cogito", "eros", "socrates", "screen-spec"],
+  "next_skill": "tasks-generator",
+  "timestamp": "2026-03-16",
+  "context_summary": {
+    "project": "Workside — 직장인 성장 커뮤니티 플랫폼",
+    "tech_stack": "Next.js (App Router) + TypeScript + Supabase + Recharts + Tailwind CSS + Vercel",
+    "screen_count": { "user": 10, "admin": 3, "total": 13 },
+    "domain_resources": ["users", "dna_sessions", "dna_responses", "dna_results", "questions", "question_responses", "suggestions", "shout_outs", "participation_history", "app_settings"],
+    "shared_components": 15,
+    "core_features": [
+      "Work Style DNA 진단 (세미 12문항 / 풀 40문항, 4축 P·C·Pol·S)",
+      "공유 (SNS/카카오/링크, OG 이미지 동적 생성)",
+      "질문 참여 피드 (참여해야 결과 확인, 사용자 제안 + Shout out, 관리자 채택 → 설문 배포)"
+    ]
+  },
+  "output_files": {
+    "specs_screens": [
+      "specs/screens/landing.yaml",
+      "specs/screens/share-receiver.yaml",
+      "specs/screens/diagnosis.yaml",
+      "specs/screens/result.yaml",
+      "specs/screens/signup.yaml",
+      "specs/screens/my-dna.yaml",
+      "specs/screens/feed.yaml",
+      "specs/screens/question.yaml",
+      "specs/screens/question-result.yaml",
+      "specs/screens/suggest.yaml",
+      "specs/screens/admin-dashboard.yaml",
+      "specs/screens/admin-questions.yaml",
+      "specs/screens/admin-users.yaml",
+      "specs/screens/index.yaml"
+    ],
+    "specs_shared": [
+      "specs/shared/components.yaml",
+      "specs/shared/types.yaml"
+    ],
+    "specs_domain": [
+      "specs/domain/resources.yaml"
+    ],
+    "docs_planning": [
+      "docs/planning/01-prd.md",
+      "docs/planning/02-trd.md",
+      "docs/planning/03-user-flow.md",
+      "docs/planning/04-database-design.md",
+      "docs/planning/05-design-system.md",
+      "docs/planning/06-screens.md",
+      "docs/planning/07-coding-convention.md"
+    ]
+  }
+}

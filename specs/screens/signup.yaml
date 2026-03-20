@@ -1,0 +1,122 @@
+version: "2.0"
+
+screen:
+  name: 가입 플로우
+  route: "/signup"
+  layout: sidebar-main
+  auth: false
+
+data_requirements:
+  - resource: users
+    needs: [id, email, nickname, industry, company_size]
+    auth_required: false
+
+components:
+  - id: progress_indicator
+    type: card
+    position: header
+    function: 다단계 진행률 표시 (Step 1/2)
+
+  - id: basic_info_form
+    type: form
+    position: main
+    function: "이메일, 닉네임, 비밀번호 입력 필드"
+    events:
+      - on: change
+        do: 실시간 검증 (이메일 중복, 비밀번호 강도)
+      - on: submit
+        do: Step 2로 이동
+
+  - id: email_input
+    type: form
+    position: main
+    function: 이메일 입력 및 중복 확인
+    events:
+      - on: blur
+        do: "Supabase users 테이블에서 중복 확인"
+
+  - id: nickname_input
+    type: form
+    position: main
+    function: 닉네임 입력 (2~20자)
+    events:
+      - on: change
+        do: 길이 및 형식 검증
+
+  - id: password_input
+    type: form
+    position: main
+    function: 비밀번호 입력 (8자 이상)
+    events:
+      - on: change
+        do: 강도 표시기 업데이트
+
+  - id: password_confirm_input
+    type: form
+    position: main
+    function: 비밀번호 확인 입력
+
+  - id: industry_selector
+    type: form
+    position: main
+    function: 산업군 선택 (드롭다운, 선택적)
+    events:
+      - on: change
+        do: 선택된 산업 상태 업데이트
+
+  - id: company_size_selector
+    type: form
+    position: main
+    function: 회사 규모 선택 (카드형, 선택적)
+    events:
+      - on: click
+        do: 선택된 규모 상태 업데이트
+
+  - id: submit_button
+    type: form
+    position: main
+    function: "[가입 완료]" Primary 버튼 (Step 1/2 전환)
+    events:
+      - on: click
+        do: "Supabase auth.signUp() 호출"
+
+  - id: completion_message
+    type: card
+    position: main
+    function: "가입되었습니다!" 확인 메시지 (Step 3)
+
+  - id: next_action_button
+    type: form
+    position: main
+    function: "[피드로 이동]" 또는 자동 리다이렉트
+    events:
+      - on: click
+        do: "/feed 또는 이전 페이지로 이동"
+
+connections:
+  navigations:
+    - from: submit_button
+      to: "/feed"
+
+  shared_components: []
+
+tests:
+  - name: Step 1 폼 검증
+    when: 사용자가 기본 정보 입력
+    then:
+      - 이메일 형식 검증
+      - 닉네임 길이 검증 (2~20자)
+      - 비밀번호 강도 표시기 업데이트
+
+  - name: 이메일 중복 확인
+    when: 이미 가입된 이메일 입력 후 blur
+    then:
+      - "이미 사용 중인 이메일" 에러 메시지 표시됨
+      - 폼 제출 버튼 비활성화됨
+
+  - name: 가입 완료 및 리다이렉트
+    when: "[가입 완료]" 버튼 클릭"
+    then:
+      - "Supabase auth.signUp() 호출"
+      - users 테이블에 신규 레코드 생성
+      - "/feed로 자동 리다이렉트"

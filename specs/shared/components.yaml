@@ -1,0 +1,459 @@
+version: "2.0"
+
+shared_components:
+  description: Workside 플랫폼에서 재사용되는 공통 컴포넌트 라이브러리
+  total_components: 15
+
+  navigation:
+    - id: Header
+      type: navigation
+      description: 플랫폼 전체에서 사용되는 상단 네비게이션 바
+      props:
+        - name: showAuthButtons
+          type: boolean
+          default: true
+          description: 로그인/가입 버튼 표시 여부
+
+        - name: activeRoute
+          type: string
+          description: 현재 활성 라우트 (네비게이션 하이라이트용)
+
+      children:
+        - name: logo
+          type: link
+          target: "/"
+
+        - name: authButtons
+          type: group
+          condition: "!isAuthenticated"
+          items: [login, signup]
+
+        - name: userMenu
+          type: dropdown
+          condition: "isAuthenticated"
+          items: [myProfile, myDNA, settings, logout]
+
+      responsive:
+        mobile: "burger menu"
+        desktop: "horizontal navigation"
+
+    - id: Footer
+      type: navigation
+      description: 페이지 하단 푸터 영역
+      props:
+        - name: showLinks
+          type: boolean
+          default: true
+
+      sections:
+        - name: about
+          links: [about_us, press, blog]
+
+        - name: legal
+          links: [privacy_policy, terms_of_service, contact]
+
+        - name: social
+          links: [twitter, facebook, linkedin]
+
+      responsive:
+        mobile: "stacked"
+        desktop: "3-column grid"
+
+    - id: AdminMenu
+      type: navigation
+      description: 관리자 화면 좌측 사이드바 메뉴
+      items:
+        - name: Dashboard
+          route: "/admin"
+          icon: "chart-bar"
+
+        - name: Questions
+          route: "/admin/questions"
+          icon: "message-circle"
+
+        - name: Users
+          route: "/admin/users"
+          icon: "users"
+
+        - name: Settings
+          route: "/admin/settings"
+          icon: "settings"
+
+  visualization:
+    - id: RadarChart
+      type: chart
+      description: 4축 DNA 점수 시각화 (P, C, Pol, S)
+      library: "Recharts"
+      props:
+        - name: data
+          type: object
+          schema:
+            p_score: number
+            c_score: number
+            pol_score: number
+            s_score: number
+
+        - name: size
+          type: enum
+          values: [small, medium, large]
+          description: "small: 200px, medium: 300px, large: 400px"
+
+        - name: interactive
+          type: boolean
+          default: true
+
+      responsive:
+        mobile: "200px"
+        desktop: "400px"
+
+    - id: BarChart
+      type: chart
+      description: 질문 응답 분포 시각화
+      library: "Recharts"
+      props:
+        - name: data
+          type: array
+          items:
+            option: string
+            count: number
+            percentage: number
+
+        - name: orientation
+          type: enum
+          values: [vertical, horizontal]
+
+    - id: LineChart
+      type: chart
+      description: 트렌드 시각화 (지난 N일)
+      library: "Recharts"
+      props:
+        - name: data
+          type: array
+          items:
+            date: string
+            value: number
+
+        - name: period
+          type: enum
+          values: [daily, weekly, monthly]
+
+    - id: PieChart
+      type: chart
+      description: 분포 시각화 (산업군, 회사규모 등)
+      library: "Recharts"
+      props:
+        - name: data
+          type: array
+
+  user_input:
+    - id: InputField
+      type: form
+      description: 텍스트 입력 필드 (이메일, 닉네임, 검색 등)
+      props:
+        - name: type
+          type: enum
+          values: [text, email, password, search]
+
+        - name: placeholder
+          type: string
+
+        - name: validation
+          type: string
+          values: [email, required, min_length, max_length, pattern]
+
+        - name: errorMessage
+          type: string
+
+        - name: helperText
+          type: string
+
+      features:
+        - real-time validation
+        - error highlighting
+        - icon support (prefix/suffix)
+
+    - id: LikertScale
+      type: form
+      description: 7점 척도 입력 (진단 설문용)
+      props:
+        - name: min
+          type: number
+          default: 1
+
+        - name: max
+          type: number
+          default: 7
+
+        - name: labels
+          type: object
+          schema:
+            min_label: string
+            max_label: string
+
+        - name: variant
+          type: enum
+          values: [radio, slider, button_group]
+
+      responsive:
+        mobile: "slider (터치 친화적)"
+        desktop: "radio buttons or buttons"
+
+    - id: OptionSelector
+      type: form
+      description: 다중 선택지 선택 (질문 답변용)
+      props:
+        - name: options
+          type: array
+          items:
+            id: string
+            label: string
+
+        - name: multiple
+          type: boolean
+          default: false
+
+        - name: variant
+          type: enum
+          values: [radio, checkbox, card]
+
+      features:
+        - card variant for visual selection
+        - validation
+        - disabled state
+
+  display:
+    - id: PersonaBadge
+      type: card
+      description: 페르소나 라벨 배지
+      props:
+        - name: label
+          type: string
+          example: "전략적 성과자"
+
+        - name: icon
+          type: string
+          description: 페르소나별 아이콘 (선택)
+
+        - name: variant
+          type: enum
+          values: [primary, secondary, outline]
+
+    - id: StatCard
+      type: card
+      description: 통계 수치 카드 (대시보드용)
+      props:
+        - name: title
+          type: string
+
+        - name: value
+          type: number | string
+
+        - name: subtitle
+          type: string
+
+        - name: icon
+          type: string
+
+        - name: trend
+          type: object
+          schema:
+            direction: enum [up, down, neutral]
+            percentage: number
+
+    - id: QuestionCard
+      type: card
+      description: 질문 항목 카드 (피드, 관리자용)
+      props:
+        - name: question
+          type: object
+          schema:
+            id: uuid
+            title: string
+            status: enum [active, closed, draft]
+            participant_count: number
+            deadline: timestamp
+
+        - name: userResponse
+          type: object
+          nullable: true
+          schema:
+            selected_option: string
+
+        - name: showParticipantCount
+          type: boolean
+          default: true
+
+    - id: SuggestionCard
+      type: card
+      description: 제안 항목 카드
+      props:
+        - name: suggestion
+          type: object
+          schema:
+            id: uuid
+            title: string
+            creator: string
+            status: enum [pending, approved, rejected]
+            shout_out_count: number
+
+        - name: showShoutOut
+          type: boolean
+          default: true
+
+  feedback:
+    - id: Toast
+      type: notification
+      description: 일시적 알림 (우측 하단)
+      props:
+        - name: message
+          type: string
+
+        - name: type
+          type: enum
+          values: [success, error, warning, info]
+
+        - name: duration
+          type: number
+          unit: milliseconds
+          default: 3000
+
+    - id: Modal
+      type: overlay
+      description: 모달 다이얼로그
+      props:
+        - name: title
+          type: string
+
+        - name: content
+          type: ReactNode
+
+        - name: actions
+          type: array
+          items:
+            label: string
+            onClick: function
+            variant: enum [primary, secondary, danger]
+
+    - id: LoadingSpinner
+      type: feedback
+      description: 로딩 상태 표시기
+      props:
+        - name: size
+          type: enum
+          values: [small, medium, large]
+
+        - name: message
+          type: string
+          nullable: true
+
+    - id: SkeletonLoader
+      type: feedback
+      description: 스켈레톤 로더 (데이터 로딩 중)
+      props:
+        - name: variant
+          type: enum
+          values: [card, list, grid, chart]
+
+        - name: count
+          type: number
+          default: 3
+
+  action:
+    - id: ShareButtons
+      type: form
+      description: SNS 공유 버튼 그룹
+      platforms: [Twitter, Facebook, Kakao, CopyLink]
+      props:
+        - name: url
+          type: string
+
+        - name: title
+          type: string
+
+        - name: description
+          type: string
+
+        - name: imageUrl
+          type: string
+
+      features:
+        - dynamic OG image generation
+        - link copy to clipboard
+
+    - id: FilterTabs
+      type: form
+      description: 필터링 탭 (피드, 관리자용)
+      props:
+        - name: tabs
+          type: array
+          items:
+            label: string
+            value: string
+            badge: number (optional)
+
+        - name: activeTab
+          type: string
+
+        - name: onChange
+          type: function
+
+    - id: FloatingActionButton
+      type: form
+      description: 플로팅 액션 버튼 (제안 작성 등)
+      props:
+        - name: icon
+          type: string
+
+        - name: label
+          type: string
+
+        - name: onClick
+          type: function
+
+        - name: position
+          type: enum
+          values: [bottom-right, bottom-center]
+
+  layout:
+    - id: SidebarLayout
+      type: layout
+      description: 좌측 사이드바 + 메인 콘텐츠
+      regions:
+        - name: sidebar
+          width: 250px
+          collapsible: true
+
+        - name: main
+          flex: 1
+
+    - id: FullWidthLayout
+      type: layout
+      description: 전체 너비 레이아웃
+      regions:
+        - name: content
+          width: 100%
+
+  responsive_guidelines:
+    mobile:
+      breakpoint: 320px - 767px
+      grid_columns: 1
+      button_height: 48px
+      card_padding: 16px
+
+    tablet:
+      breakpoint: 768px - 1023px
+      grid_columns: 2
+      button_height: 44px
+      card_padding: 20px
+
+    desktop:
+      breakpoint: 1024px+
+      grid_columns: 3-4
+      button_height: 40px
+      card_padding: 24px
+
+  accessibility:
+    wcag_compliance: AA
+    keyboard_navigation: true
+    screen_reader_support: true
+    color_contrast_ratio: 4.5:1

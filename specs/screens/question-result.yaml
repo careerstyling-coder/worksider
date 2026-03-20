@@ -1,0 +1,128 @@
+version: "2.0"
+
+screen:
+  name: 세부 결과
+  route: "/question/:questionId/result"
+  layout: full-width
+  auth: false
+
+data_requirements:
+  - resource: questions
+    needs: [id, title, status, deadline, participant_count]
+    filters:
+      id: ":questionId"
+    auth_required: false
+  - resource: question_responses
+    needs: [id, question_id, user_id, selected_option, persona_label]
+    filters:
+      question_id: ":questionId"
+    auth_required: false
+  - resource: dna_results
+    needs: [id, persona_label, user_id]
+    auth_required: false
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: 뒤로가기 + "결과" 제목
+    events:
+      - on: click
+        do: 이전 페이지로 이동
+
+  - id: question_summary
+    type: detail
+    position: main
+    function: 질문 제목, 마감 상태, 총 참여자 수 표시
+    data_source:
+      resource: questions
+
+  - id: my_response_badge
+    type: card
+    position: main
+    function: 현재 사용자의 응답 표시 (회원일 때)
+    data_source:
+      resource: question_responses
+
+  - id: results_bar_chart
+    type: chart
+    position: main
+    function: 선택지별 집계 (%, n) - 바 차트
+    data_source:
+      resource: question_responses
+
+  - id: result_row
+    type: card
+    position: main
+    function: 개별 선택지 결과 (Option 1: 48%, n=456)
+    data_source:
+      resource: question_responses
+
+  - id: type_distribution_chart
+    type: chart
+    position: main
+    function: 페르소나별 분포 (회원만)
+    data_source:
+      resource: dna_results
+
+  - id: minority_view_card
+    type: detail
+    position: main
+    function: 소수 의견 강조 (3~4개 패턴)
+    data_source:
+      resource: question_responses
+
+  - id: insight_text
+    type: card
+    position: main
+    function: "자율형 독립가 중 45%가 Option 3을 선택했어요" 등 패턴 분석
+    data_source:
+      resource: question_responses
+
+  - id: share_section
+    type: card
+    position: main
+    function: "[SNS 공유] [링크 복사]" 버튼 섹션
+    events:
+      - on: click
+        do: SNS 공유 또는 클립보드 복사
+
+  - id: navigation_buttons
+    type: card
+    position: footer
+    function: "[이전 질문 결과] [다음 질문 결과] [피드로]"
+    events:
+      - on: click
+        do: 해당 페이지로 이동
+
+connections:
+  navigations:
+    - from: navigation_buttons
+      to: "/question/:nextQuestionId/result"
+
+  shared_components:
+    - Header
+    - ShareButtons
+
+tests:
+  - name: 결과 집계 및 시각화
+    when: "유효한 questionId로 /question/:questionId/result 접근"
+    then:
+      - questions에서 질문 로드
+      - question_responses에서 모든 응답 집계
+      - 선택지별 비율(%) 계산됨
+      - 바 차트 렌더링됨
+
+  - name: 페르소나별 분포 분석 (회원)
+    when: 인증된 사용자가 결과 페이지 접근
+    then:
+      - dna_results 조인으로 페르소나 분포 계산
+      - "전략적 성과자: 12명" 등으로 표시됨
+      - 가로 막대 차트 렌더링됨
+
+  - name: 소수 의견 패턴 도출
+    when: 응답 분포 분석 완료
+    then:
+      - 페르소나별 선택지 비율 계산
+      - 전체 평균과 다른 패턴 식별
+      - "OO 유형은 주로 Option X를 선택했습니다" 메시지 표시됨

@@ -1,0 +1,175 @@
+version: "2.0"
+
+screens_index:
+  description: Workside 플랫폼 전체 화면 목록 및 메타데이터
+  total_screens: 13
+  generated_at: "2026-03-16"
+
+  user_screens:
+    - id: S-1
+      name: 랜딩 페이지
+      file: landing.yaml
+      route: "/"
+      auth_required: false
+      description: 서비스 소개 및 첫 진입점
+      key_components: [Header, HeroSection, FeatureCards, Testimonials, Footer]
+
+    - id: S-2
+      name: 공유 수신
+      file: share-receiver.yaml
+      route: "/share/:shareId"
+      auth_required: false
+      description: 공유자의 DNA 결과 열람 및 진단 시작
+      key_components: [SharedResultCard, RadarChart, PersonaDescription, CTASection]
+
+    - id: S-3
+      name: DNA 진단
+      file: diagnosis.yaml
+      route: "/diagnosis"
+      auth_required: false
+      description: DNA 진단 설문 진행 (세미/풀)
+      key_components: [VersionSelector, ProgressBar, QuestionCard, LikertScale, NavigationButtons]
+
+    - id: S-4
+      name: DNA 결과
+      file: result.yaml
+      route: "/result/:sessionId"
+      auth_required: false
+      description: 계산된 DNA 결과 표시 및 공유/가입 유도
+      key_components: [RadarChart, PersonaBadge, DescriptionSection, ShareButtons, UpgradeSection]
+
+    - id: S-5
+      name: 가입 플로우
+      file: signup.yaml
+      route: "/signup"
+      auth_required: false
+      description: 이메일/비밀번호 입력 및 온보딩 정보 수집
+      key_components: [SignupForm, ProgressIndicator, InputFields, IndustrySelector, CompanySizeSelector]
+
+    - id: S-6
+      name: 내 DNA
+      file: my-dna.yaml
+      route: "/my-dna"
+      auth_required: true
+      description: 사용자 프로필 및 DNA 진단 이력 확인
+      key_components: [ProfileSection, LatestDNACard, StatsSection, DNAHistoryList, SuggestionsList]
+
+    - id: S-7
+      name: 피드 (메인)
+      file: feed.yaml
+      route: "/feed"
+      auth_required: false
+      description: 질문 및 제안 통합 피드, 정기적 재방문 엔진
+      key_components: [FilterTabs, FeaturedQuestionCard, QuestionCard, SuggestionCard, FloatingActionButton]
+
+    - id: S-8
+      name: 질문 참여
+      file: question.yaml
+      route: "/question/:questionId"
+      auth_required: false
+      description: 질문에 답변 제출
+      key_components: [QuestionHeader, QuestionContent, OptionSelector, WarningBanner, NavigationButtons]
+
+    - id: S-9
+      name: 세부 결과
+      file: question-result.yaml
+      route: "/question/:questionId/result"
+      auth_required: false
+      description: 질문별 응답 분석 및 소수 의견 노출
+      key_components: [ResultHeader, ResultBarChart, TypeDistributionChart, MinorityViewCard, ShareSection]
+
+    - id: S-10
+      name: 질문 제안
+      file: suggest.yaml
+      route: "/suggest"
+      auth_required: true
+      description: 새로운 질문 제안 제출
+      key_components: [SuggestionForm, FormField, CharacterCounter, SubmissionSuccess, RecentSuggestions]
+
+  admin_screens:
+    - id: A-1
+      name: 관리자 대시보드
+      file: admin-dashboard.yaml
+      route: "/admin"
+      auth_required: true
+      role_required: admin
+      description: 주요 지표 모니터링 및 설정 변경
+      key_components: [StatCards, LineChart, BarChart, SettingsPanel, ActivityFeed]
+
+    - id: A-2
+      name: 질문 관리
+      file: admin-questions.yaml
+      route: "/admin/questions"
+      auth_required: true
+      role_required: admin
+      description: 질문 생성, 배포, 마감, 제안 검토
+      key_components: [QuestionTable, CreateQuestionModal, FilterTabs, SuggestionReviewCard]
+
+    - id: A-3
+      name: 사용자 관리
+      file: admin-users.yaml
+      route: "/admin/users"
+      auth_required: true
+      role_required: admin
+      description: 사용자 분석 및 통계
+      key_components: [UserStatsCards, DemographicCharts, UserTable, CohortChart, SearchBar]
+
+  navigation_graph:
+    landing:
+      outgoing: [diagnosis, auth_login, auth_signup]
+
+    diagnosis:
+      outgoing: [result, share_receiver]
+      incoming: [landing, my_dna, result]
+
+    result:
+      outgoing: [signup, diagnosis, share_receiver]
+      incoming: [diagnosis]
+
+    signup:
+      outgoing: [feed, my_dna]
+      incoming: [landing, result, question]
+
+    feed:
+      outgoing: [question, question_result, my_dna, suggest]
+      incoming: [signup, my_dna]
+
+    question:
+      outgoing: [question_result, feed]
+      incoming: [feed]
+
+    question_result:
+      outgoing: [question, feed]
+      incoming: [question, feed]
+
+    my_dna:
+      outgoing: [result, suggest, feed, diagnosis]
+      incoming: [feed, signup]
+
+    suggest:
+      outgoing: [feed, my_dna]
+      incoming: [feed, my_dna]
+
+    share_receiver:
+      outgoing: [diagnosis, signup]
+      incoming: [result_sharing]
+
+  authentication_layers:
+    public:
+      screens: [S-1, S-2, S-3, S-4, S-8, S-9]
+      note: "비회원도 접근 가능, 일부 기능 제한"
+
+    authenticated:
+      screens: [S-5, S-6, S-7, S-10]
+      note: "로그인 필수"
+
+    admin:
+      screens: [A-1, A-2, A-3]
+      note: "관리자 역할 필수"
+
+  mobile_responsive:
+    all_screens: true
+    breakpoints:
+      mobile: 320px
+      tablet: 768px
+      desktop: 1280px

@@ -1,0 +1,134 @@
+version: "2.0"
+
+screen:
+  name: 내 DNA
+  route: "/my-dna"
+  layout: sidebar-main
+  auth: true
+
+data_requirements:
+  - resource: users
+    needs: [id, email, nickname, industry, company_size]
+    filters:
+      id: "current_user"
+    auth_required: true
+  - resource: dna_results
+    needs: [id, session_id, p_score, c_score, pol_score, s_score, persona_label, version, created_at]
+    filters:
+      user_id: "current_user"
+    auth_required: true
+  - resource: participation_history
+    needs: [id, user_id, action_type, created_at]
+    filters:
+      user_id: "current_user"
+    auth_required: true
+  - resource: suggestions
+    needs: [id, user_id, title, status, shout_out_count]
+    filters:
+      user_id: "current_user"
+    auth_required: true
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "내 DNA" 제목 표시
+
+  - id: profile_section
+    type: detail
+    position: main
+    function: 닉네임, 이메일, 산업/규모 태그 표시
+    data_source:
+      resource: users
+
+  - id: latest_dna_card
+    type: detail
+    position: main
+    function: 최근 진단 결과 (작은 RadarChart + 점수 + 날짜)
+    data_source:
+      resource: dna_results
+    events:
+      - on: click
+        do: "/result/:sessionId로 이동"
+
+  - id: radar_chart_small
+    type: chart
+    position: main
+    function: 최근 DNA 결과 레이더 차트 (축소 버전)
+    data_source:
+      resource: dna_results
+
+  - id: stats_section
+    type: card
+    position: main
+    function: 참여 통계 표시 (질문 X개, 공유 Y회, 가입일)
+    data_source:
+      resource: participation_history
+
+  - id: suggestions_section
+    type: detail
+    position: main
+    function: 제안 이력 (승인, 검토중 카운트)
+    data_source:
+      resource: suggestions
+    events:
+      - on: click
+        do: "/suggest로 이동"
+
+  - id: dna_history_list
+    type: list
+    position: main
+    function: 전체 DNA 진단 이력 (페이지네이션)
+    data_source:
+      resource: dna_results
+    events:
+      - on: scroll
+        do: 페이지네이션 로드
+
+  - id: dna_history_item
+    type: card
+    position: main
+    function: 진단 항목 (버전, 날짜, 결과 보기 링크)
+    events:
+      - on: click
+        do: "/result/:sessionId로 이동"
+
+  - id: action_buttons
+    type: card
+    position: main
+    function: "[프로필 수정] [결과 공유] [로그아웃]" 버튼 그룹
+    events:
+      - on: click
+        do: 각 액션 수행
+
+connections:
+  navigations:
+    - from: latest_dna_card
+      to: "/result/:sessionId"
+    - from: suggestions_section
+      to: "/suggest"
+    - from: dna_history_item
+      to: "/result/:sessionId"
+
+  shared_components:
+    - Header
+
+tests:
+  - name: 프로필 정보 로드
+    when: 인증된 사용자가 /my-dna 접근
+    then:
+      - users에서 현재 사용자 정보 로드
+      - 닉네임, 이메일, 산업/규모 표시됨
+
+  - name: 최근 DNA 결과 표시
+    when: 사용자의 DNA 진단 이력 존재
+    then:
+      - dna_results에서 최신 레코드 조회
+      - RadarChart 및 점수 표시됨
+      - 페르소나 라벨 표시됨
+
+  - name: DNA 히스토리 페이지네이션
+    when: 사용자가 이력 목록을 스크롤
+    then:
+      - 다음 페이지 데이터 로드됨 (limit: 5)
+      - "더보기" 또는 자동 로드 적용됨

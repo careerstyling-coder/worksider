@@ -1,0 +1,101 @@
+version: "2.0"
+
+screen:
+  name: 랜딩 페이지
+  route: "/"
+  layout: full-width
+  auth: false
+
+data_requirements: []
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: 로고 및 인증 링크 표시
+    events:
+      - on: click
+        do: 로그인/가입 모달 열기
+
+  - id: hero_section
+    type: card
+    position: main
+    function: 서비스 가치 제안 및 주요 CTA 제시
+    events:
+      - on: click
+        do: "/diagnosis로 이동"
+
+  - id: feature_section_1
+    type: card
+    position: main
+    function: 세미 진단 특징 설명
+    events:
+      - on: scroll
+        do: 애니메이션 발동
+
+  - id: feature_section_2
+    type: card
+    position: main
+    function: 공유 및 비교 기능 설명
+
+  - id: feature_section_3
+    type: card
+    position: main
+    function: 정기 질문 참여 설명
+
+  - id: testimonial_carousel
+    type: list
+    position: main
+    function: 사용자 피드백 카드 3~4개 표시
+    events:
+      - on: click
+        do: 다음 테스티모니얼 로드
+
+  - id: cta_section
+    type: card
+    position: main
+    function: 최종 CTA 버튼 제시
+    events:
+      - on: click
+        do: "/diagnosis로 이동"
+
+  - id: footer
+    type: navigation
+    position: footer
+    function: 링크 및 저작권 정보 표시
+    events:
+      - on: click
+        do: 정책 페이지 이동
+
+connections:
+  navigations:
+    - from: hero_section
+      to: "/diagnosis"
+    - from: cta_section
+      to: "/diagnosis"
+    - from: header
+      to: "/auth/login"
+
+  shared_components:
+    - Header
+    - Footer
+
+tests:
+  - name: 페이지 로드
+    when: 비회원이 루트 경로에 접근
+    then:
+      - 헤더 네비게이션 표시됨
+      - 히어로 섹션이 풀화면으로 렌더링됨
+      - 모든 기능 섹션이 순서대로 표시됨
+
+  - name: DNA 진단 CTA 클릭
+    when: 사용자가 CTA 버튼 클릭
+    then:
+      - "/diagnosis로 이동"
+      - 진단 버전 선택 화면 표시됨
+
+  - name: 반응형 레이아웃
+    when: 화면 크기가 모바일(320px)로 변경
+    then:
+      - 카드가 1 컬럼으로 재정렬됨
+      - 텍스트 크기가 모바일 규격으로 조정됨

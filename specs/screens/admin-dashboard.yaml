@@ -1,0 +1,176 @@
+version: "2.0"
+
+screen:
+  name: 관리자 대시보드
+  route: "/admin"
+  layout: sidebar-main
+  auth: true
+
+data_requirements:
+  - resource: dna_sessions
+    needs: [id, completed_at]
+    filters:
+      status: "completed"
+    auth_required: true
+  - resource: question_responses
+    needs: [id, question_id, created_at]
+    auth_required: true
+  - resource: users
+    needs: [id, created_at, role]
+    filters:
+      role: "user"
+    auth_required: true
+  - resource: participation_history
+    needs: [id, created_at, action_type]
+    auth_required: true
+  - resource: app_settings
+    needs: [key, value]
+    auth_required: true
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "대시보드" 제목 + [설정] [로그아웃] 버튼
+    events:
+      - on: click
+        do: 각 액션 수행
+
+  - id: stat_cards
+    type: card
+    position: main
+    function: 핵심 지표 4가지 (DNA 진단, 질문 참여, 공유, DAU)
+    data_source:
+      resource: dna_sessions, question_responses, users, participation_history
+
+  - id: stat_card_1
+    type: card
+    position: main
+    function: "DNA 진단 완료: 157명" 카드
+    data_source:
+      resource: dna_sessions
+
+  - id: stat_card_2
+    type: card
+    position: main
+    function: "질문 참여: 412회" 카드
+    data_source:
+      resource: question_responses
+
+  - id: stat_card_3
+    type: card
+    position: main
+    function: "공유 클릭: 28회" 카드
+    data_source:
+      resource: participation_history
+
+  - id: stat_card_4
+    type: card
+    position: main
+    function: "활성 사용자 (DAU): 23명" 카드
+    data_source:
+      resource: users
+
+  - id: dna_trend_chart
+    type: chart
+    position: main
+    function: DNA 진단 추세 (지난 14일) 꺾은선 그래프
+    data_source:
+      resource: dna_sessions
+
+  - id: conversion_rate_chart
+    type: chart
+    position: main
+    function: 회원가입 전환율 분석
+    data_source:
+      resource: users
+
+  - id: question_engagement_chart
+    type: chart
+    position: main
+    function: 질문별 참여도 (Top 5) 막대 그래프
+    data_source:
+      resource: question_responses
+
+  - id: settings_panel
+    type: form
+    position: main
+    function: 동적 설정 변경 패널
+    events:
+      - on: change
+        do: app_settings 테이블 업데이트
+
+  - id: gate_location_selector
+    type: form
+    position: main
+    function: 가입 게이트 위치 라디오 선택
+    data_source:
+      resource: app_settings
+    events:
+      - on: change
+        do: "gate_location 설정값 업데이트"
+
+  - id: question_distribution_selector
+    type: form
+    position: main
+    function: 질문 배포 주기 선택
+    data_source:
+      resource: app_settings
+    events:
+      - on: change
+        do: "question_distribution 설정값 업데이트"
+
+  - id: save_settings_button
+    type: form
+    position: main
+    function: "[저장]" 버튼
+    events:
+      - on: click
+        do: "app_settings 변경사항 저장"
+
+  - id: activity_feed
+    type: list
+    position: main
+    function: 최근 활동 피드 (새 제안, 대기중인 질문, 오류 로그)
+    events:
+      - on: load
+        do: 최신 활동 항목 표시
+
+  - id: admin_menu
+    type: navigation
+    position: sidebar
+    function: 관리자 네비게이션 메뉴
+    events:
+      - on: click
+        do: 해당 관리 페이지로 이동
+
+connections:
+  navigations:
+    - from: admin_menu
+      to: "/admin/questions"
+    - from: admin_menu
+      to: "/admin/users"
+
+  shared_components:
+    - Header
+    - AdminMenu
+
+tests:
+  - name: 대시보드 지표 로드
+    when: 관리자가 /admin 페이지 접근
+    then:
+      - dna_sessions, question_responses 등에서 데이터 조회
+      - "DNA 진단 완료: 157명" 등의 지표 표시됨
+      - 차트 렌더링 완료
+
+  - name: 가입 게이트 위치 변경
+    when: 관리자가 게이트 위치 라디오 변경 후 [저장] 클릭
+    then:
+      - app_settings 테이블의 'gate_location' 값 업데이트
+      - "저장되었습니다" 확인 메시지 표시됨
+
+  - name: 최근 활동 표시
+    when: 대시보드 로드 완료
+    then:
+      - "새 제안: 3건" 항목 표시됨
+      - 클릭 시 해당 관리 탭으로 이동 가능

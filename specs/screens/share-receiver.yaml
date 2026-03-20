@@ -1,0 +1,91 @@
+version: "2.0"
+
+screen:
+  name: 공유 수신
+  route: "/share/:shareId"
+  layout: full-width
+  auth: false
+
+data_requirements:
+  - resource: dna_results
+    needs: [id, p_score, c_score, pol_score, s_score, persona_label, persona_description, share_token]
+    filters:
+      share_token: ":shareId"
+    auth_required: false
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: 간단한 로고 및 닫기 버튼 표시
+    events:
+      - on: click
+        do: 이전 페이지로 이동
+
+  - id: shared_result_card
+    type: detail
+    position: main
+    function: 공유자의 DNA 결과 시각화
+    data_source:
+      resource: dna_results
+    events:
+      - on: load
+        do: RadarChart 렌더링
+
+  - id: radar_chart
+    type: chart
+    position: main
+    function: 4축 레이더 차트 표시 (P, C, Pol, S)
+    data_source:
+      resource: dna_results
+
+  - id: persona_badge
+    type: card
+    position: main
+    function: 페르소나 라벨 및 설명 표시
+    data_source:
+      resource: dna_results
+
+  - id: cta_section
+    type: card
+    position: main
+    function: "나는 어떨까?" CTA 제시
+    events:
+      - on: click
+        do: "/diagnosis로 이동"
+
+  - id: signup_suggestion
+    type: card
+    position: main
+    function: 가입 유도 텍스트 (선택사항)
+    events:
+      - on: click
+        do: "/signup 또는 가입 모달 열기"
+
+connections:
+  navigations:
+    - from: cta_section
+      to: "/diagnosis"
+
+  shared_components:
+    - Header
+
+tests:
+  - name: 공유 토큰 조회
+    when: "/share/:shareId에 유효한 토큰으로 접근"
+    then:
+      - dna_results 테이블에서 일치하는 레코드 로드됨
+      - RadarChart에 P, C, Pol, S 점수 표시됨
+      - 페르소나 정보 표시됨
+
+  - name: 진단 시작 버튼 클릭
+    when: 사용자가 "[진단 시작]" 버튼 클릭"
+    then:
+      - "/diagnosis로 이동"
+      - 세션이 신규 생성됨 (공유 정보 전달 가능)
+
+  - name: 잘못된 토큰 처리
+    when: "잘못되거나 만료된 shareId로 접근"
+    then:
+      - "유효하지 않은 공유 링크" 메시지 표시됨
+      - 대체 CTA (랜딩으로 이동) 제시됨

@@ -1,0 +1,155 @@
+version: "2.0"
+
+screen:
+  name: 질문 제안
+  route: "/suggest"
+  layout: full-width
+  auth: true
+
+data_requirements:
+  - resource: suggestions
+    needs: [id, user_id, title, background, status, shout_out_count, created_at]
+    filters:
+      user_id: "current_user"
+    auth_required: true
+
+components:
+  - id: header
+    type: navigation
+    position: header
+    function: "질문 제안하기" 제목
+
+  - id: info_section
+    type: card
+    position: main
+    function: "좋은 제안을 환영합니다" 정보 섹션
+    events:
+      - on: load
+        do: 안내 텍스트 표시
+
+  - id: suggestion_form
+    type: form
+    position: main
+    function: 제안 폼 (제목 + 배경 설명)
+    events:
+      - on: submit
+        do: "suggestions 테이블에 레코드 추가"
+
+  - id: title_input
+    type: form
+    position: main
+    function: 제안 제목 입력 필드 (500자 이상)
+    events:
+      - on: change
+        do: 자수 카운터 업데이트
+
+  - id: title_counter
+    type: card
+    position: main
+    function: 실시간 자수 카운트 "120/500"
+    events:
+      - on: change
+        do: 입력 길이에 따라 실시간 업데이트
+
+  - id: background_textarea
+    type: form
+    position: main
+    function: 배경 설명 / 근거 텍스트에어 (1000자 권장)
+    events:
+      - on: change
+        do: 자수 카운터 업데이트
+
+  - id: background_counter
+    type: card
+    position: main
+    function: 실시간 자수 카운트
+    events:
+      - on: change
+        do: 입력 길이에 따라 실시간 업데이트
+
+  - id: public_discussion_checkbox
+    type: form
+    position: main
+    function: 체크박스 "이 주제를 공개 논의해도 됩니다"
+    events:
+      - on: change
+        do: 체크 상태 토글
+
+  - id: reset_button
+    type: form
+    position: main
+    function: "[초기화]" 버튼
+    events:
+      - on: click
+        do: 폼 필드 초기화
+
+  - id: submit_button
+    type: form
+    position: main
+    function: "[제출]" Primary 버튼
+    events:
+      - on: click
+        do: "suggestions 테이블에 데이터 저장 (status: pending)"
+
+  - id: success_message
+    type: card
+    position: main
+    function: "제안이 접수되었습니다!" 확인 메시지 (체크 아이콘)
+    events:
+      - on: load
+        do: 성공 상태 표시
+
+  - id: next_action_buttons
+    type: card
+    position: main
+    function: "[피드로 돌아가기] [다른 제안]" 버튼 그룹
+    events:
+      - on: click
+        do: 각 액션 이동
+
+  - id: recent_suggestions_section
+    type: detail
+    position: main
+    function: 최근 다른 사용자의 제안 5개 표시
+    data_source:
+      resource: suggestions
+
+  - id: recent_suggestion_card
+    type: card
+    position: main
+    function: 제안 카드 (제목, 제안자, 상태, Shout out)
+    data_source:
+      resource: suggestions
+    events:
+      - on: click
+        do: 제안 상세 조회 (향후)
+
+connections:
+  navigations:
+    - from: next_action_buttons
+      to: "/feed"
+
+  shared_components:
+    - Header
+
+tests:
+  - name: 폼 검증 및 자수 카운트
+    when: 사용자가 제안 제목 및 배경 입력
+    then:
+      - 제목 필드에 실시간 자수 카운트 표시됨
+      - 배경 필드에 실시간 자수 카운트 표시됨
+      - 필드 값이 유효하면 [제출] 버튼 활성화됨
+
+  - name: 제안 제출
+    when: "[제출]" 버튼 클릭"
+    then:
+      - suggestions 테이블에 신규 레코드 추가
+      - status = 'pending' 설정
+      - user_id = current_user 설정
+      - "제안이 접수되었습니다!" 메시지 표시됨
+
+  - name: 최근 제안 목록 표시
+    when: 제출 폼 아래에서 최근 제안 조회
+    then:
+      - suggestions 테이블에서 최신 5개 로드 (status = 'approved')
+      - 제목, 제안자, 상태, Shout out 수 표시됨

@@ -1,0 +1,103 @@
+version: "2.0"
+
+resources:
+  users:
+    fields:
+      id: { type: uuid, pk: true }
+      email: { type: string, unique: true }
+      nickname: { type: string, unique: true }
+      password_hash: { type: string }
+      industry: { type: string, nullable: true }
+      company_size: { type: string, nullable: true }
+      role: { type: enum, values: [user, admin], default: user }
+      created_at: { type: timestamp }
+      updated_at: { type: timestamp }
+
+  dna_sessions:
+    fields:
+      id: { type: uuid, pk: true }
+      user_id: { type: uuid, nullable: true, ref: users.id }
+      version: { type: enum, values: [semi, full] }
+      status: { type: enum, values: [in_progress, completed] }
+      share_token: { type: string, unique: true, nullable: true }
+      created_at: { type: timestamp }
+      completed_at: { type: timestamp, nullable: true }
+
+  dna_responses:
+    fields:
+      id: { type: uuid, pk: true }
+      session_id: { type: uuid, ref: dna_sessions.id }
+      question_id: { type: string }
+      value: { type: number }
+      created_at: { type: timestamp }
+
+  dna_results:
+    fields:
+      id: { type: uuid, pk: true }
+      session_id: { type: uuid, ref: dna_sessions.id }
+      user_id: { type: uuid, nullable: true, ref: users.id }
+      p_score: { type: number }
+      c_score: { type: number }
+      pol_score: { type: number }
+      s_score: { type: number }
+      persona_label: { type: string }
+      persona_description: { type: text }
+      version: { type: enum, values: [semi, full] }
+      share_token: { type: string, unique: true }
+      created_at: { type: timestamp }
+
+  questions:
+    fields:
+      id: { type: uuid, pk: true }
+      title: { type: string }
+      description: { type: text, nullable: true }
+      type: { type: enum, values: [simple, survey] }
+      status: { type: enum, values: [draft, active, closed] }
+      is_featured: { type: boolean, default: false }
+      options: { type: jsonb }
+      created_by: { type: uuid, ref: users.id }
+      suggestion_id: { type: uuid, nullable: true, ref: suggestions.id }
+      deadline: { type: timestamp, nullable: true }
+      participant_count: { type: number, default: 0 }
+      created_at: { type: timestamp }
+
+  question_responses:
+    fields:
+      id: { type: uuid, pk: true }
+      question_id: { type: uuid, ref: questions.id }
+      user_id: { type: uuid, ref: users.id }
+      selected_option: { type: string }
+      persona_label: { type: string }
+      created_at: { type: timestamp }
+
+  suggestions:
+    fields:
+      id: { type: uuid, pk: true }
+      user_id: { type: uuid, ref: users.id }
+      title: { type: string }
+      background: { type: text, nullable: true }
+      status: { type: enum, values: [pending, approved, rejected] }
+      shout_out_count: { type: number, default: 0 }
+      created_at: { type: timestamp }
+
+  shout_outs:
+    fields:
+      id: { type: uuid, pk: true }
+      suggestion_id: { type: uuid, ref: suggestions.id }
+      user_id: { type: uuid, ref: users.id }
+      created_at: { type: timestamp }
+
+  participation_history:
+    fields:
+      id: { type: uuid, pk: true }
+      user_id: { type: uuid, ref: users.id }
+      action_type: { type: enum, values: [diagnosis, question, suggestion, share, shout_out] }
+      target_id: { type: uuid }
+      created_at: { type: timestamp }
+
+  app_settings:
+    fields:
+      id: { type: uuid, pk: true }
+      key: { type: string, unique: true }
+      value: { type: jsonb }
+      updated_at: { type: timestamp }

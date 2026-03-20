@@ -1,0 +1,46 @@
+{
+  "completed_skills": ["neurion", "cogito", "eros", "socrates"],
+  "next_skill": "screen-spec",
+  "timestamp": "2026-03-16",
+  "context_summary": {
+    "project": "Workside — 일을 더욱 일답게 하고자 하는 직장인들의 성장 커뮤니티 플랫폼",
+    "cogito_statement": "나는 일에 대한 태도의 '다름'을 겉으로 꺼내는 언어를 만들고 싶다",
+    "core_features": [
+      "Work Style DNA 진단 (4축 P·C·Pol·S, 세미 12문항/풀 40문항)",
+      "공유 (SNS/카카오/링크, OG 이미지 동적 생성, 공유 수신 화면)",
+      "질문 참여 피드 (참여해야 결과 확인, 사용자 제안+Shout out, 관리자 채택→설문 배포, 단순/설문형 모두)"
+    ],
+    "screens": {
+      "user_count": 10,
+      "admin_count": 3,
+      "user_screens": ["랜딩(로그인+가입)", "공유수신", "DNA진단", "DNA결과", "가입플로우", "내DNA", "피드(메인허브)", "질문참여", "세부결과", "질문제안"],
+      "admin_screens": ["대시보드", "질문관리", "사용자관리"]
+    },
+    "tech_stack": {
+      "framework": "Next.js (App Router) + TypeScript",
+      "database": "Supabase (PostgreSQL + Auth + Realtime)",
+      "chart": "Recharts",
+      "deployment": "Vercel",
+      "styling": "Tailwind CSS"
+    },
+    "key_design_decisions": [
+      "가입 게이트 위치: 관리자 설정으로 조정 가능 (모듈화)",
+      "피드가 메인 허브: 채택된 질문 상단 + 질문목록 + 제안 + Shout out 통합",
+      "질문 형식 다양화: 단순 1회성 or 설문형 다문항",
+      "알림→참여: 질문 직접 이동 or 피드 경유 모두 가능",
+      "비회원 즉시 진단 가능, 가입 없이 세미/풀 모두"
+    ]
+  },
+  "output_files": [
+    "docs/planning/01-prd.md",
+    "docs/planning/02-trd.md",
+    "docs/planning/03-user-flow.md",
+    "docs/planning/04-database-design.md",
+    "docs/planning/05-design-system.md",
+    "docs/planning/06-screens.md",
+    "docs/planning/07-coding-convention.md",
+    "neurion-proposal.md",
+    "cogito-statement.md",
+    ".claude/docs/eros-analysis-20260316-workside-deficiency.md"
+  ]
+}

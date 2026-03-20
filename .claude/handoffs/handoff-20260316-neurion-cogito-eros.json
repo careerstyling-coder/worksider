@@ -1,0 +1,35 @@
+{
+  "completed_skills": ["neurion", "cogito", "eros"],
+  "next_skill": "socrates",
+  "timestamp": "2026-03-16",
+  "context_summary": {
+    "project": "Workside — 일을 더욱 일답게 하고자 하는 직장인들의 성장 커뮤니티 플랫폼",
+    "cogito_statement": "나는 일에 대한 태도의 '다름'을 겉으로 꺼내는 언어를 만들고 싶다, 왜냐하면 사람을 이해하는 것은 불가능하지만 일에 대한 태도의 다름은 볼 수 있고, 그것이 보이면 함께 일하는 법을 찾을 수 있기 때문이다. 이것이 실현되면, 전 세계 직장인에게 퍼뜨릴 방법을 고민하게 된다.",
+    "eros_ideaa": "사람은 자기 자신을 이해하고 싶어하고, 그 이해를 타인과 나누고 싶어한다. 이 욕구가 특정 맥락에 구체화될 때 가치가 생기고, 공유 가능한 언어가 만들어질 때 커뮤니티가 형성된다.",
+    "key_deficiencies": [
+      "[hidden-gap] 일반 직장인의 DNA 진단 참여 의향 미검증",
+      "[assumed-known] '참여해야 결과를 본다' 재방문 구조 미검증",
+      "[boundary-gap] 무료→유료 전환 포인트 불명확"
+    ],
+    "neurion_selected_ideas": [
+      "마이크로 1문항 진단 (바이럴 입구)",
+      "일 상황극 RPG 진단 (몰입형 경험)",
+      "오늘의 일 질문 위젯 (재방문 엔진)",
+      "일 포트폴리오 카드 (데이터 자산화)"
+    ],
+    "cogito_tech_stack": {
+      "framework": "Next.js",
+      "database": "Supabase (PostgreSQL)",
+      "chart": "Chart.js/Recharts",
+      "deployment": "Vercel",
+      "styling": "Tailwind CSS"
+    },
+    "market_insight": "일 특화 + 바이럴 = 빈 자리. MBTI는 바이럴 되지만 일 특화 아님. DISC/StrengthsFinder는 일 특화지만 바이럴 안 됨."
+  },
+  "output_files": [
+    "neurion-proposal.md",
+    "cogito-statement.md",
+    ".claude/docs/eros-analysis-20260316-workside-deficiency.md"
+  ],
+  "existing_planning_docs": "사용자가 공유한 통합 기획서 (로드맵 + PRD + 기획서 v2 + Phase 1 상세 명세) — 매우 상세함. /socrates 진행 시 이 기획서와 cogito/eros 결과를 함께 참조할 것"
+}
