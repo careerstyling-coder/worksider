@@ -1,0 +1,201 @@
+version: "2.0"
+
+screen:
+  name: 초대 랜딩 페이지 (SCR-3)
+  route: "/prelaunch?ref={invite_code}"
+  layout: full-width
+  auth: false
+  description: 초대 링크를 통해 접근한 사용자를 위한 맞춤형 랜딩 페이지. 초대자명 배너, 동적 OG 이미지, 클릭 추적 기능 포함.
+
+data_requirements:
+  - inviteCode: string (from searchParams.ref)
+  - inviterName: string | null (from /api/reservations?invite_code={code})
+
+components:
+  - id: invite_banner
+    type: banner
+    position: top
+    condition: inviterName이 존재할 때만 렌더링
+    function: 초대자명 표시
+    properties:
+      background_color: orange-500/20
+      border_color: orange-400/40
+      text_color: orange-300
+      message_template: "{inviterName}님이 초대했어요!"
+      icon: 🎉
+    states:
+      - visible (when inviterName exists)
+      - hidden (when inviterName is null or empty)
+
+  - id: hero_section
+    type: card
+    position: main
+    function: 서비스 가치 제안 및 프리론칭 메시지 제시
+    properties:
+      title: "당신의 일 스타일을 먼저"
+      subtitle: "첫 500명을 위한 특별한 기회"
+
+  - id: invite_tracker
+    type: hidden_component
+    position: none
+    condition: refCode가 존재할 때만 렌더링
+    function: 클릭 추적 수행 (useEffect)
+    properties:
+      api_endpoint: /api/invite-tracking
+      method: POST
+      payload: { invite_code: string }
+      silent_failure: true
+
+connections:
+  og_image:
+    - endpoint: /api/og
+    - param: inviter={encodeURIComponent(refCode)}
+    - fallback: /api/og (ref가 없을 때)
+    - image_size: 1200x630
+    - format: png
+
+  api_calls:
+    - endpoint: /api/reservations
+      method: GET
+      param: invite_code={refCode}
+      purpose: 초대자 정보 조회 (이름/이메일)
+      timing: server-side (generateMetadata + getInviterName)
+
+    - endpoint: /api/invite-tracking
+      method: POST
+      body: { invite_code: string }
+      purpose: 클릭 기록
+      timing: client-side (useInviteTracker useEffect)
+      error_handling: silent failure (non-blocking)
+
+metadata:
+  og:
+    title: "{inviterName}님이 추천하는 Workside" (if inviterName) or "Workside - 나의 Work DNA를 분석하세요"
+    description: "나의 일하는 방식을 DNA로 분석하고, 같은 성향의 팀을 연결합니다"
+    image: "/api/og?inviter={inviterName}" (if inviterName) or "/api/og"
+    image_width: 1200
+    image_height: 630
+  twitter:
+    card: summary_large_image
+    same_as_og: true
+
+tests:
+  - id: SCR3-T1
+    name: 유효 초대코드 - 초대자명 배너 표시
+    when: ref=abc123 (유효한 초대코드)로 접근 및 /api/reservations 조회 성공
+    then:
+      - InviteBanner가 inviterName prop과 함께 렌더링됨
+      - "🎉 {inviterName}님이 초대했어요!" 텍스트 표시
+      - orange 스타일 클래스 적용
+      - data-testid="invite-banner" 확인 가능
+
+  - id: SCR3-T2
+    name: 무효 초대코드 - 배너 없이 일반 랜딩
+    when: ref=invalid (유효하지 않은 초대코드)로 접근 또는 ref 파라미터 없음
+    then:
+      - InviteBanner가 렌더링되지 않음 (null 반환)
+      - 일반 프리론칭 페이지와 동일하게 표시
+      - inviterName이 null일 때 getInviterName이 null 반환
+
+  - id: SCR3-T3
+    name: 초대자명 기반 OG 이미지 동적 생성
+    when: ref={inviterName} 파라미터로 /api/og 호출
+    then:
+      - "/api/og?inviter={inviterName}" 요청 처리
+      - ImageResponse 생성자에 inviter 이름 포함
+      - element JSON에 "{inviterName}님이 추천하는" 텍스트 포함
+      - 1200x630 크기로 생성
+      - Content-Type: image/png 응답
+
+  - id: SCR3-T4
+    name: 기본 OG 이미지 (inviter 없을 때)
+    when: /api/og 호출 (inviter 파라미터 없음)
+    then:
+      - ImageResponse 생성자에 inviter 이름 미포함
+      - "Workside" 기본 텍스트만 포함
+      - 1200x630 크기로 생성
+      - Content-Type: image/png 응답
+
+  - id: SCR3-T5
+    name: 초대 클릭 추적 기록
+    when: ref={inviteCode}로 접근 + useInviteTracker 컴포넌트 mount
+    then:
+      - POST /api/invite-tracking 호출
+      - body: { invite_code: "{inviteCode}" }
+      - 성공(201) 또는 실패해도 UX 영향 없음 (silent failure)
+      - useInviteCode hook에서 자동으로 호출
+
+  - id: SCR3-T6
+    name: useInviteCode hook - 유효 초대코드 처리
+    when: useInviteCode('abc123') hook 호출
+    then:
+      - 초기: loading=true, inviterName=null, isValid=false
+      - 조회 성공: loading=false, inviterName={data.email}, isValid=true
+      - 추적 API 자동 호출 (실패해도 inviterName 반환)
+
+  - id: SCR3-T7
+    name: useInviteCode hook - 무효 초대코드 처리
+    when: useInviteCode('invalid') hook 호출 + /api/reservations 404 응답
+    then:
+      - loading=false, inviterName=null, isValid=false
+      - error는 설정되지 않음 (정상 범위 내 응답)
+
+  - id: SCR3-T8
+    name: InviteTracker 컴포넌트 - 클릭 추적 실행
+    when: <InviteTracker invite_code="abc123" /> 렌더링
+    then:
+      - useEffect에서 POST /api/invite-tracking 호출
+      - invite_code dependency로 추적
+      - fetch 실패해도 에러 미처리 (silent catch)
+
+  - id: SCR3-T9
+    name: InviteTracker 컴포넌트 - invite_code 없을 때
+    when: <InviteTracker invite_code="" /> 또는 undefined
+    then:
+      - useEffect 내에서 조기 반환 (early return)
+      - POST 호출 없음
+
+  - id: SCR3-T10
+    name: Page metadata - ref 파라미터 포함 시
+    when: generateMetadata({ searchParams: { ref: "홍길동" } })
+    then:
+      - title: "홍길동님이 추천하는 Workside"
+      - description: "나의 일하는 방식을 DNA로 분석하고, 같은 성향의 팀을 연결합니다"
+      - og:image: "/api/og?inviter=홍길동"
+      - twitter:card: "summary_large_image"
+
+  - id: SCR3-T11
+    name: Page metadata - ref 파라미터 없을 때
+    when: generateMetadata({})
+    then:
+      - title: "Workside - 나의 Work DNA를 분석하세요"
+      - description: "나의 일하는 방식을 DNA로 분석하고, 같은 성향의 팀을 연결합니다"
+      - og:image: "/api/og"
+      - twitter:card: "summary_large_image"
+
+implementation_notes: |
+  1. InviteBanner 컴포넌트:
+     - inviterName prop이 없거나 빈 문자열이면 null 반환
+     - orange-500/20 배경, orange-400/40 테두리, orange-300 텍스트
+
+  2. useInviteCode hook:
+     - /api/reservations?invite_code={code}로 초대자 조회
+     - 성공 시 inviterName = data.email
+     - 조회 성공 후 /api/invite-tracking POST 호출 (실패해도 OK)
+     - 취소 처리 포함 (component unmount 시 cleanup)
+
+  3. InviteTracker 컴포넌트:
+     - Client Component ('use client')
+     - useEffect로 mount 시 추적 API 호출
+     - invite_code dependency 필수
+     - null 반환 (UI 렌더링 없음)
+
+  4. OG API (/api/og):
+     - inviter 쿼리 파라미터 기반으로 이미지 생성
+     - inviter 있을 때: "{inviter}님이 추천하는 Workside"
+     - inviter 없을 때: "Workside" 기본 이미지
+
+  5. Page metadata:
+     - Server Component에서 generateMetadata 구현
+     - getInviterName(refCode) 서버 함수로 초대자명 조회
+     - og:image 및 twitter:image는 동적 /api/og 사용
