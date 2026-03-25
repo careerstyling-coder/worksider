@@ -3,7 +3,7 @@
 // @TASK P2-S2-T2 - 예약 완료 페이지 (API 연동)
 // @SPEC specs/screens/prelaunch/reserved
 
-import { useEffect, useCallback } from 'react';
+import { Suspense, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { WelcomeMessage } from '@/components/prelaunch/WelcomeMessage';
 import { InviteLinkCard } from '@/components/prelaunch/InviteLinkCard';
@@ -12,7 +12,7 @@ import { SocialShareButtons } from '@/components/prelaunch/SocialShareButtons';
 import { useInviteProgress } from '@/hooks/useInviteProgress';
 import { copyToClipboard, shareToKakao, shareToTwitter, getInviteLink } from '@/lib/share';
 
-export default function ReservedPage() {
+function ReservedPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -85,5 +85,13 @@ export default function ReservedPage() {
         />
       </div>
     </main>
+  );
+}
+
+export default function ReservedPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReservedPageContent />
+    </Suspense>
   );
 }
