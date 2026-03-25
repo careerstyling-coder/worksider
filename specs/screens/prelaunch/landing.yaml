@@ -1,0 +1,142 @@
+version: "2.0"
+
+screen:
+  name: 프리론칭 랜딩 페이지 (SCR-1)
+  route: "/prelaunch"
+  layout: full-width
+  auth: false
+  description: Workside 프리론칭 단계의 랜딩 페이지로 사용자 예약을 수집합니다.
+
+data_requirements: []
+
+components:
+  - id: hero_section
+    type: card
+    position: main
+    function: 서비스 가치 제안 및 프리론칭 메시지 제시
+    properties:
+      title: "당신의 일 스타일을 먼저"
+      subtitle: "첫 500명을 위한 특별한 기회"
+      scroll_hint: 스크롤 유도 애니메이션
+
+  - id: dna_intro_section
+    type: card_grid
+    position: main
+    function: Work Style DNA 4축 설명
+    properties:
+      grid_layout: 2x2
+      cards:
+        - label: Practice
+          icon: ⚙️
+          description: 업무를 계획하고 실행하는 방식
+        - label: Communication
+          icon: 🤝
+          description: 팀과 소통하는 스타일
+        - label: Politics
+          icon: 🎯
+          description: 조직 내 관계와 영향력
+        - label: Self-leadership
+          icon: 🚀
+          description: 스스로를 이끄는 힘
+
+  - id: reservation_form
+    type: form
+    position: main
+    function: 사용자 이메일 및 직무 정보 수집
+    fields:
+      - name: email
+        type: email
+        required: true
+        placeholder: "your@email.com"
+      - name: industry
+        type: select
+        required: true
+        options:
+          - 개발
+          - 디자인
+          - 기획/PM
+          - 마케팅
+          - 영업
+          - 인사/총무
+          - 재무/회계
+          - 기타
+      - name: experience_years
+        type: select
+        required: true
+        options:
+          - 1년 미만
+          - 1-3년
+          - 3-5년
+          - 5-10년
+          - 10년 이상
+    submit_button: "지금 예약하기"
+    states:
+      - idle
+      - loading
+      - success
+      - error
+
+connections:
+  navigation:
+    - on_success: "/prelaunch/reserved"
+      params: "?position={queue_position}&ref={invite_code}"
+
+tests:
+  - name: 페이지 초기 로드
+    when: 비회원이 /prelaunch 경로에 접근
+    then:
+      - 히어로 섹션이 전체 화면으로 렌더링됨
+      - "당신의 일 스타일을 먼저" 제목 표시
+      - "첫 500명을 위한 특별한 기회" 부제 표시
+      - 스크롤 유도 아이콘 표시
+      - DNA 4축 카드 (Practice, Communication, Politics, Self-leadership) 표시
+      - 예약 폼 표시
+
+  - name: 예약 성공
+    when: 사용자가 유효한 이메일, 직군, 연차를 입력하고 제출
+    then:
+      - API POST /api/reservations 호출
+      - 성공 응답 (HTTP 201) 수신
+      - /prelaunch/reserved?position={queue_position}&ref={invite_code} 리다이렉트
+      - 큐 위치와 초대 코드 전달
+
+  - name: 이메일 중복 오류
+    when: 이미 예약된 이메일로 제출
+    then:
+      - API에서 409 Conflict 응답
+      - "이미 예약하신 이메일입니다" 에러 메시지 표시
+      - 폼 유지 (리다이렉트 없음)
+
+  - name: 네트워크 오류
+    when: API 호출 실패 또는 서버 에러
+    then:
+      - "오류가 발생했습니다. 다시 시도해주세요" 에러 메시지 표시
+      - 제출 버튼 활성화 (재시도 가능)
+      - 폼 유지 (리다이렉트 없음)
+
+  - name: 폼 유효성 검사
+    when: 필수 필드가 비어 있을 때 제출 시도
+    then:
+      - API 호출 없음
+      - 제출 버튼 비활성화
+
+  - name: 로딩 상태
+    when: 폼 제출 중
+    then:
+      - 제출 버튼 비활성화
+      - 로딩 스피너 표시
+      - 폼 필드 비활성화
+
+  - name: 성공 상태
+    when: 예약 완료 후 리다이렉트 전
+    then:
+      - 축하 메시지 표시 (🎉)
+      - "예약이 완료되었습니다!" 제목
+      - "첫 500명 안에 포함되셨습니다" 설명
+
+  - name: 반응형 레이아웃
+    when: 화면 크기가 모바일(320px)로 변경
+    then:
+      - 히어로 섹션 제목이 모바일 규격으로 조정됨
+      - DNA 카드가 1 컬럼으로 재정렬됨
+      - 예약 폼이 모바일 최적화된 레이아웃으로 표시됨

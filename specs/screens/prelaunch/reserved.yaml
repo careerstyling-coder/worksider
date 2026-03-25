@@ -1,0 +1,127 @@
+version: "2.0"
+
+screen:
+  name: 예약 완료 페이지 (SCR-2)
+  route: "/prelaunch/reserved"
+  layout: full-width
+  auth: false
+  description: 사용자 예약 완료 후 표시되는 페이지로 초대 코드와 공유 기능을 제공합니다.
+
+data_requirements:
+  - query_param: position
+    type: number
+    required: true
+    description: 대기열 위치
+  - query_param: ref
+    type: string
+    required: true
+    description: 초대 코드
+  - query_param: reservation_id
+    type: string
+    required: false
+    description: 예약 ID
+
+components:
+  - id: welcome_message
+    type: card
+    position: main
+    function: 예약 완료 축하 메시지 및 대기열 위치 표시
+    properties:
+      emoji: 🎉
+      title: "예약이 완료되었습니다!"
+      message: "첫 500명 안에 포함되셨습니다"
+      queue_position_display: "귀하의 위치: {position}번"
+
+  - id: invite_link_card
+    type: card
+    position: main
+    function: 초대 링크 생성 및 복사 기능
+    properties:
+      title: "친구들을 초대하세요"
+      link_format: "https://workside.co/invite/{ref}"
+      copy_button: "링크 복사"
+
+  - id: invite_progress_bar
+    type: progress
+    position: main
+    function: 초대 진행 현황 표시
+    properties:
+      current: "현재 초대 수"
+      total: "목표 초대 수"
+      milestones:
+        - 1명: 1개월 무료 이용권
+        - 3명: 3개월 무료 이용권 + 프리미엄 배지
+        - 5명: 얼리어답터 배지 + 평생 할인 혜택
+
+  - id: reward_info
+    type: card
+    position: main
+    function: 리워드 안내 및 혜택 설명
+    items:
+      - "1명 초대: 1개월 무료 이용권"
+      - "3명 초대: 3개월 무료 이용권 + 프리미엄 배지"
+      - "5명 초대: 얼리어답터 배지 + 평생 할인 혜택"
+
+  - id: social_share_buttons
+    type: button_group
+    position: main
+    function: 소셜 미디어 공유 기능
+    buttons:
+      - platform: kakao
+        label: "카카오톡으로 공유"
+        action: shareToKakao
+      - platform: twitter
+        label: "트위터에 공유"
+        action: shareToTwitter
+      - platform: copy
+        label: "링크 복사"
+        action: copyToClipboard
+
+connections:
+  validation:
+    - if_missing: [position, ref]
+      then: redirect_to /prelaunch
+
+tests:
+  - name: 페이지 접근 (유효한 파라미터)
+    when: 예약 완료 후 /prelaunch/reserved?position=42&ref=abc123으로 접근
+    then:
+      - 환영 메시지 표시
+      - 대기열 위치 표시 (42번)
+      - 초대 링크 표시
+      - 초대 진행 현황 표시
+      - 리워드 정보 표시
+      - 공유 버튼 표시
+
+  - name: 파라미터 검증 실패
+    when: position 또는 ref 파라미터가 없을 때 접근
+    then:
+      - /prelaunch로 자동 리다이렉트
+
+  - name: 초대 링크 복사
+    when: "링크 복사" 버튼 클릭
+    then:
+      - 클립보드에 링크 복사됨
+      - 토스트/알림 메시지 표시
+
+  - name: 카카오톡 공유
+    when: "카카오톡으로 공유" 버튼 클릭
+    then:
+      - 카카오톡 공유 다이얼로그 열림
+      - 제목: "Workside 얼리어답터 초대"
+      - 설명: "지금 예약하면 얼리어답터 혜택을 받을 수 있어요!"
+      - 링크 포함
+
+  - name: 트위터 공유
+    when: "트위터에 공유" 버튼 클릭
+    then:
+      - 트위터 공유 URL 생성
+      - 텍스트: "Workside 얼리어답터 모집 중!"
+      - 링크 포함
+
+  - name: 초대 진행률 업데이트
+    when: useInviteProgress hook이 데이터 로드
+    then:
+      - 현재 초대 수 표시
+      - 목표 대비 진행률 표시
+      - 다음 마일스톤 표시
