@@ -1,7 +1,7 @@
 // @TASK P3-S4-T1 - 예약자 대시보드 UI 테스트
 // @SPEC specs/screens/prelaunch/my-reservation
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueuePosition } from '@/components/prelaunch/QueuePosition';
 import { RewardStatus } from '@/components/prelaunch/RewardStatus';
@@ -106,10 +106,47 @@ describe('RewardStatus', () => {
   });
 });
 
-// --- MyReservationPage 통합 ---
+// --- MyReservationPage 통합 (API 연동 후) ---
+// useMyReservation hook + next/navigation을 mock하여 page 렌더링 테스트
+
+const mockReplace = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace, push: vi.fn() }),
+}));
+
+const mockUseMyReservation = vi.fn();
+
+vi.mock('@/hooks/useMyReservation', () => ({
+  useMyReservation: () => mockUseMyReservation(),
+}));
+
+const MOCK_RESERVATION_DATA = {
+  id: 'res-001',
+  email: 'test@example.com',
+  queue_position: 42,
+  invite_code: 'WORK2024',
+  industry: 'tech',
+  experience_years: '5',
+};
+
+const MOCK_REWARDS_DATA = [
+  { type: 'early_adopter_badge', status: 'locked' },
+  { type: 'priority_access', status: 'locked' },
+];
+
 describe('MyReservationPage integration', () => {
+  beforeEach(() => {
+    // 기본: 정상 데이터 로드 상태
+    mockUseMyReservation.mockReturnValue({
+      reservation: MOCK_RESERVATION_DATA,
+      inviteStats: { successful_invites: 2 },
+      rewards: MOCK_REWARDS_DATA,
+      loading: false,
+      error: null,
+    });
+  });
+
   it('renders QueuePosition with mock data', async () => {
-    // 동적 import로 페이지 컴포넌트 테스트
     const { default: Page } = await import('@/app/prelaunch/my-reservation/page');
     render(<Page />);
     expect(screen.getByTestId('queue-position')).toBeInTheDocument();
@@ -124,14 +161,12 @@ describe('MyReservationPage integration', () => {
   it('renders InviteProgressBar', async () => {
     const { default: Page } = await import('@/app/prelaunch/my-reservation/page');
     render(<Page />);
-    // InviteProgressBar 렌더링 확인 (친구 초대 현황 텍스트)
     expect(screen.getByText(/친구 초대 현황/)).toBeInTheDocument();
   });
 
   it('renders InviteLinkCard', async () => {
     const { default: Page } = await import('@/app/prelaunch/my-reservation/page');
     render(<Page />);
-    // InviteLinkCard는 복사 버튼을 렌더링함 (SocialShareButtons의 링크 복사 버튼도 있으므로 getAllByRole 사용)
     const copyButtons = screen.getAllByRole('button', { name: /복사/ });
     expect(copyButtons.length).toBeGreaterThanOrEqual(1);
   });
