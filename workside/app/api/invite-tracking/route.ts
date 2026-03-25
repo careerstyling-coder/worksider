@@ -1,9 +1,13 @@
-// @TASK P1-R2-T1 - Invite Tracking API
+// @TASK P1-R2-T2 - Invite Tracking API (refactored to use lib)
 // @SPEC docs/planning/prelaunch/invite-tracking
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import {
+  trackLinkClick,
+  recordConversion,
+  getInviterStats,
+} from '@/lib/invite-tracking';
 
 // --- Validation Schemas ---
 
@@ -30,49 +34,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
     const { invite_code } = parsed.data;
 
-    // Look up inviter from reservations by invite_code
-    const { data: inviter, error: inviterError } = await supabase
-      .from('reservations')
-      .select('id, invite_code')
-      .eq('invite_code', invite_code)
-      .single();
-
-    if (inviterError || !inviter) {
-      return NextResponse.json(
-        { error: 'Invalid invite code' },
-        { status: 404 }
-      );
-    }
-
-    // Create tracking record
-    const { data: tracking, error: trackingError } = await supabase
-      .from('invite_tracking')
-      .insert({
-        inviter_id: inviter.id,
-        invite_code,
-        link_clicked: true,
-        clicked_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (trackingError) {
-      return NextResponse.json(
-        { error: 'Failed to create tracking record' },
-        { status: 500 }
-      );
-    }
+    const tracking = await trackLinkClick(invite_code);
 
     return NextResponse.json(
       { id: tracking.id, inviter_id: tracking.inviter_id, invite_code: tracking.invite_code },
       { status: 201 }
     );
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+
+    if (message === 'Invalid invite code') {
+      return NextResponse.json({ error: message }, { status: 404 });
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -92,47 +70,20 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const supabase = await createClient();
     const { invite_code, invitee_id } = parsed.data;
 
-    // Find the tracking record by invite_code
-    const { data: existing, error: findError } = await supabase
-      .from('invite_tracking')
-      .select('id, invite_code, link_clicked')
-      .eq('invite_code', invite_code)
-      .order('created_at', { ascending: false })
-      .single();
+    await recordConversion(invite_code, invitee_id);
 
-    if (findError || !existing) {
-      return NextResponse.json(
-        { error: 'Tracking record not found' },
-        { status: 404 }
-      );
+    return NextResponse.json({ converted: true }, { status: 200 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+
+    if (message === 'Tracking record not found' || message === 'Invalid invite code') {
+      return NextResponse.json({ error: message }, { status: 404 });
     }
 
-    // Update with conversion data
-    const { data: updated, error: updateError } = await supabase
-      .from('invite_tracking')
-      .update({
-        converted: true,
-        converted_at: new Date().toISOString(),
-        invitee_id,
-      })
-      .eq('id', existing.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      return NextResponse.json(
-        { error: 'Failed to update tracking record' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(updated, { status: 200 });
-  } catch {
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -152,27 +103,10 @@ export async function GET(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    const { data: records, error } = await supabase
-      .from('invite_tracking')
-      .select('*')
-      .eq('inviter_id', inviter_id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch tracking records' },
-        { status: 500 }
-      );
-    }
-
-    const successful_invites = (records || []).filter(
-      (r: { converted: boolean }) => r.converted === true
-    ).length;
+    const stats = await getInviterStats(inviter_id);
 
     return NextResponse.json(
-      { records: records || [], successful_invites },
+      { records: stats.records, successful_invites: stats.successful_invites },
       { status: 200 }
     );
   } catch {
