@@ -1,29 +1,59 @@
 'use client';
 
-// @TASK P2-S2-T1 - 예약 완료 페이지
+// @TASK P2-S2-T2 - 예약 완료 페이지 (API 연동)
 // @SPEC specs/screens/prelaunch/reserved
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { WelcomeMessage } from '@/components/prelaunch/WelcomeMessage';
 import { InviteLinkCard } from '@/components/prelaunch/InviteLinkCard';
 import { InviteProgressBar } from '@/components/prelaunch/InviteProgressBar';
 import { SocialShareButtons } from '@/components/prelaunch/SocialShareButtons';
+import { useInviteProgress } from '@/hooks/useInviteProgress';
+import { copyToClipboard, shareToKakao, shareToTwitter, getInviteLink } from '@/lib/share';
 
 export default function ReservedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const queuePositionParam = searchParams.get('position');
+  const reservationId = searchParams.get('reservation_id') ?? '';
   const inviteCode = searchParams.get('ref');
 
   const queuePosition = queuePositionParam ? parseInt(queuePositionParam, 10) : null;
+
+  const { current, total } = useInviteProgress(reservationId);
 
   useEffect(() => {
     if (!queuePosition || !inviteCode) {
       router.replace('/prelaunch');
     }
   }, [queuePosition, inviteCode, router]);
+
+  const handleKakaoClick = useCallback(() => {
+    if (!inviteCode) return;
+    const link = getInviteLink(inviteCode);
+    shareToKakao({
+      title: 'Workside 얼리어답터 초대',
+      description: '지금 예약하면 얼리어답터 혜택을 받을 수 있어요!',
+      link,
+    });
+  }, [inviteCode]);
+
+  const handleTwitterClick = useCallback(() => {
+    if (!inviteCode) return;
+    const link = getInviteLink(inviteCode);
+    shareToTwitter({
+      text: 'Workside 얼리어답터 모집 중! 지금 예약하면 특별 혜택을 받을 수 있어요.',
+      url: link,
+    });
+  }, [inviteCode]);
+
+  const handleCopyClick = useCallback(async () => {
+    if (!inviteCode) return;
+    const link = getInviteLink(inviteCode);
+    await copyToClipboard(link);
+  }, [inviteCode]);
 
   if (!queuePosition || !inviteCode) {
     return null;
@@ -36,7 +66,7 @@ export default function ReservedPage() {
 
         <InviteLinkCard inviteCode={inviteCode} />
 
-        <InviteProgressBar current={0} total={5} />
+        <InviteProgressBar current={current} total={total} />
 
         <div className="bg-bg-secondary border border-white/10 rounded-2xl p-6">
           <h2 className="text-white font-semibold mb-2">리워드 안내</h2>
@@ -47,7 +77,12 @@ export default function ReservedPage() {
           </ul>
         </div>
 
-        <SocialShareButtons inviteCode={inviteCode} />
+        <SocialShareButtons
+          inviteCode={inviteCode}
+          onKakaoClick={handleKakaoClick}
+          onTwitterClick={handleTwitterClick}
+          onCopyClick={handleCopyClick}
+        />
       </div>
     </main>
   );
