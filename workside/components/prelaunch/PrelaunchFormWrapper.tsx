@@ -7,12 +7,16 @@ import { useRouter } from 'next/navigation';
 import { ReservationForm, ReservationFormData } from './ReservationForm';
 import { useReservation } from '@/hooks/useReservation';
 
-export function PrelaunchFormWrapper() {
+interface PrelaunchFormWrapperProps {
+  refCode?: string;
+}
+
+export function PrelaunchFormWrapper({ refCode }: PrelaunchFormWrapperProps) {
   const router = useRouter();
   const { status, error, reservation, createReservation } = useReservation();
 
   const handleSubmit = async (data: ReservationFormData) => {
-    await createReservation(data);
+    await createReservation({ ...data, ref: refCode });
   };
 
   // 성공 시 예약 완료 페이지로 이동
