@@ -1,0 +1,180 @@
+version: "2.0"
+
+screen:
+  name: 예약자 대시보드 (SCR-4)
+  route: "/prelaunch/my-reservation"
+  layout: full-width
+  auth: true
+  description: 로그인한 사용자의 예약 현황, 초대 통계, 리워드 상태를 종합 표시하는 대시보드입니다.
+
+data_requirements:
+  - source: localStorage
+    key: workside_email
+    type: string
+    required: true
+    description: 사용자 이메일 (없으면 /prelaunch로 리다이렉트)
+  - api: GET /api/reservations?email={email}
+    type: object
+    required: true
+    fields:
+      - id (string, uuid)
+      - email (string)
+      - queue_position (number)
+      - invite_code (string)
+      - industry (string)
+      - experience_years (string)
+    description: 사용자 예약 정보
+  - api: GET /api/invite-tracking?inviter_id={reservation_id}
+    type: object
+    required: false
+    fields:
+      - successful_invites (number)
+      - records (array)
+    fallback: '{ successful_invites: 0 }'
+    description: 초대 성공 통계
+  - api: GET /api/rewards?reservation_id={reservation_id}
+    type: object
+    required: false
+    fields:
+      - rewards (array of Reward)
+    fallback: '[]'
+    description: 사용자 리워드 상태
+
+components:
+  - id: queue_position
+    type: card
+    position: main
+    function: 예약 순번 표시
+    properties:
+      label: "나의 예약 순번"
+      display_format: 큰 숫자 (text-7xl)
+      subtext: "번째 예약자"
+      testid: "queue-position"
+
+  - id: invite_progress_bar
+    type: progress
+    position: main
+    function: 초대 진행 현황 표시
+    properties:
+      label: "친구 초대 현황"
+      format: "current/total"
+      total: 5
+      milestones:
+        - 5명: 얼리어답터 배지 unlock
+      testid: "invite-progress-bar"
+
+  - id: reward_status
+    type: card_grid
+    position: main
+    function: 리워드 상태 (locked/unlocked) 표시
+    properties:
+      items:
+        - type: early_adopter_badge
+          label: "얼리어답터 배지"
+          description: "5명 초대 달성 시 지급되는 특별 배지"
+          lock_icon: lock (when status=locked) / check (when status=unlocked)
+        - type: priority_access
+          label: "풀 진단 우선 접근"
+          description: "정식 오픈 시 진단 우선 이용권"
+          lock_icon: lock (when status=locked) / check (when status=unlocked)
+      testid: "reward-status"
+
+  - id: invite_link_card
+    type: card
+    position: main
+    function: 초대 링크 표시 및 복사
+    properties:
+      title: "친구들을 초대하세요"
+      link_format: "https://workside.co/invite/{invite_code}"
+      copy_button: "복사"
+
+  - id: social_share_buttons
+    type: button_group
+    position: main
+    function: 소셜 미디어 공유
+    buttons:
+      - platform: kakao
+        label: "카카오톡"
+      - platform: twitter
+        label: "트위터"
+
+connections:
+  api_flow:
+    - step_1: 'GET /api/reservations?email={email}'
+      description: 예약 정보 조회
+      required: true
+      on_404: redirect to /prelaunch
+    - step_2a: 'GET /api/invite-tracking?inviter_id={id}'
+      description: 초대 통계 조회
+      required: false
+      parallel_with: step_2b
+      fallback: '{ successful_invites: 0 }'
+    - step_2b: 'GET /api/rewards?reservation_id={id}'
+      description: 리워드 조회
+      required: false
+      parallel_with: step_2a
+      fallback: '[]'
+
+  validation:
+    - if_missing: workside_email
+      then: redirect_to /prelaunch
+    - if_api_404: reservations
+      then: redirect_to /prelaunch
+
+tests:
+  - name: 초기 로드 - 모든 데이터 표시
+    when: 로그인 사용자가 /prelaunch/my-reservation 접근
+    then:
+      - 순번이 큰 숫자로 표시됨 (text-7xl)
+      - 초대 진행바가 current/total 형식으로 표시됨
+      - 리워드 상태가 locked/unlocked 구분되어 표시됨
+      - 초대 링크가 표시됨
+      - 소셜 공유 버튼이 표시됨
+
+  - name: 초대 성공 반영
+    when: 사용자가 5명을 초대하여 invite_tracking API 호출 시 successful_invites=5 반환
+    then:
+      - 진행바가 5/5로 표시됨
+      - 진행바 색상이 green-500으로 변경됨
+      - 얼리어답터 배지 상태가 unlocked로 변경됨
+
+  - name: 배지 달성
+    when: successful_invites >= 5
+    then:
+      - 얼리어답터 배지가 unlocked 상태로 표시
+      - 배지 옆에 "획득" 태그 표시
+      - 잠금 아이콘이 체크 마크로 변경됨
+
+  - name: 비로그인 접근
+    when: localStorage에 workside_email이 없을 때 접근
+    then:
+      - /prelaunch로 자동 리다이렉트
+
+  - name: 예약 정보 없음
+    when: API가 404 응답 (존재하지 않는 예약)
+    then:
+      - /prelaunch로 자동 리다이렉트
+
+  - name: 초대 통계 API 실패
+    when: invite_tracking API가 500 에러 응답
+    then:
+      - 진행바가 0/5로 표시됨 (fallback)
+      - 페이지는 정상 렌더링 (reservation + rewards는 유지)
+
+  - name: 리워드 API 실패
+    when: rewards API가 500 에러 응답
+    then:
+      - 모든 리워드가 locked 상태로 표시됨 (fallback)
+      - 페이지는 정상 렌더링 (reservation + inviteStats는 유지)
+
+  - name: 로딩 상태
+    when: API 호출 중
+    then:
+      - "불러오는 중..." 메시지 표시
+      - 모든 컨텐츠 영역이 로딩 상태로 표시됨
+
+  - name: API 호출 순서
+    when: 페이지 마운트
+    then:
+      - 먼저 /api/reservations 호출
+      - 그 후 /api/invite-tracking과 /api/rewards가 병렬로 호출됨
