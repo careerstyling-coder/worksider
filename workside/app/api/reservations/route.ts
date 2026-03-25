@@ -1,10 +1,11 @@
-// @TASK P1-R1-T1 - Reservations API route
+// @TASK P1-R1-T1, P1-R1-T2 - Reservations API route (refactored to use lib)
 // @SPEC docs/planning/prelaunch/reservations
 // @TEST __tests__/api/reservations/reservations.test.ts
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createReservation } from '@/lib/reservations';
 
 // -- Validation schemas --
 
@@ -14,17 +15,6 @@ const reservationCreateSchema = z.object({
   experience_years: z.string().min(1),
   ref: z.string().optional(),
 });
-
-// -- Helpers --
-
-function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
 
 // -- POST /api/reservations --
 
@@ -40,60 +30,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, industry, experience_years, ref } = parsed.data;
-    const supabase = await createClient();
-
-    // Resolve invited_by_id from ref (invite_code)
-    let invited_by_id: string | null = null;
-    if (ref) {
-      const { data: referrer } = await supabase
-        .from('reservations')
-        .select('id')
-        .eq('invite_code', ref)
-        .single();
-      if (referrer) {
-        invited_by_id = referrer.id;
-      }
-    }
-
-    const invite_code = generateInviteCode();
-
-    const { data, error } = await supabase
-      .from('reservations')
-      .insert({
-        email,
-        industry,
-        experience_years,
-        invite_code,
-        invited_by_id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      // PostgreSQL unique constraint violation
-      if (error.code === '23505') {
-        return NextResponse.json(
-          { error: '이미 예약하신 이메일입니다' },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json(
-        { error: '예약 처리 중 오류가 발생했습니다' },
-        { status: 500 }
-      );
-    }
+    const reservation = await createReservation(parsed.data);
 
     return NextResponse.json(
       {
-        id: data.id,
-        email: data.email,
-        queue_position: data.queue_position,
-        invite_code: data.invite_code,
+        id: reservation.id,
+        email: reservation.email,
+        queue_position: reservation.queue_position,
+        invite_code: reservation.invite_code,
       },
       { status: 201 }
     );
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+
+    if (message === '이미 예약하신 이메일입니다') {
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+
+    if (message === '예약 처리 중 오류가 발생했습니다') {
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+
     return NextResponse.json(
       { error: '잘못된 요청입니다' },
       { status: 400 }

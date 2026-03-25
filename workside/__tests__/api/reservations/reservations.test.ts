@@ -1,27 +1,30 @@
-// @TASK P1-R1-T1 - Reservations API route tests
+// @TASK P1-R1-T1, P1-R1-T2 - Reservations API route tests (refactored)
 // @SPEC docs/planning/prelaunch/reservations
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Build a chainable mock that supports:
-// .from('reservations').insert({...}).select().single()
-// .from('reservations').select().eq('email', ...).single()
-// .from('reservations').select('id').eq('invite_code', ...).single()
+// -- Mock lib/reservations (business logic layer) --
+
+const { mockCreateReservation } = vi.hoisted(() => {
+  const mockCreateReservation = vi.fn();
+  return { mockCreateReservation };
+});
+
+vi.mock('@/lib/reservations', () => ({
+  createReservation: mockCreateReservation,
+}));
+
+// -- Mock lib/supabase/server (for GET handler which still uses it directly) --
+
 const { mockSingle, setupMocks } = vi.hoisted(() => {
   const mockSingle = vi.fn();
 
   function setupMocks() {
     const chain: Record<string, ReturnType<typeof vi.fn>> = {};
-
     chain.single = mockSingle;
     chain.eq = vi.fn(() => ({ single: mockSingle }));
     chain.select = vi.fn(() => ({ eq: chain.eq, single: mockSingle }));
-    chain.insert = vi.fn(() => ({ select: chain.select }));
-    chain.from = vi.fn(() => ({
-      insert: chain.insert,
-      select: chain.select,
-    }));
-
+    chain.from = vi.fn(() => ({ select: chain.select }));
     return chain;
   }
 
@@ -45,18 +48,15 @@ describe('POST /api/reservations', () => {
   });
 
   it('should return 201 with queue_position and invite_code on success', async () => {
-    mockSingle.mockResolvedValue({
-      data: {
-        id: 'uuid-1',
-        email: 'test@example.com',
-        queue_position: 42,
-        invite_code: 'ABC12345',
-        industry: 'IT',
-        experience_years: '5-10',
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      },
-      error: null,
+    mockCreateReservation.mockResolvedValue({
+      id: 'uuid-1',
+      email: 'test@example.com',
+      queue_position: 42,
+      invite_code: 'ABC12345',
+      industry: 'IT',
+      experience_years: '5-10',
+      status: 'pending',
+      created_at: new Date().toISOString(),
     });
 
     const request = new Request('http://localhost/api/reservations', {
@@ -80,10 +80,7 @@ describe('POST /api/reservations', () => {
   });
 
   it('should return 409 for duplicate email', async () => {
-    mockSingle.mockResolvedValue({
-      data: null,
-      error: { code: '23505', message: 'duplicate key value violates unique constraint' },
-    });
+    mockCreateReservation.mockRejectedValue(new Error('이미 예약하신 이메일입니다'));
 
     const request = new Request('http://localhost/api/reservations', {
       method: 'POST',
