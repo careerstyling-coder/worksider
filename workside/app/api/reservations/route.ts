@@ -59,26 +59,27 @@ export async function POST(request: Request) {
   }
 }
 
-// -- GET /api/reservations?email={email} --
+// -- GET /api/reservations?email={email} or ?invite_code={code} --
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email');
+  const invite_code = searchParams.get('invite_code');
 
-  if (!email) {
+  if (!email && !invite_code) {
     return NextResponse.json(
-      { error: 'email 파라미터가 필요합니다' },
+      { error: 'email 또는 invite_code 파라미터가 필요합니다' },
       { status: 400 }
     );
   }
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('reservations')
-    .select()
-    .eq('email', email)
-    .single();
+  const query = supabase.from('reservations').select();
+
+  const { data, error } = invite_code
+    ? await query.eq('invite_code', invite_code).single()
+    : await query.eq('email', email!).single();
 
   if (error || !data) {
     return NextResponse.json(
