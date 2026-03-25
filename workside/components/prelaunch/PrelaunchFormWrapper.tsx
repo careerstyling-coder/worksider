@@ -1,27 +1,32 @@
 'use client';
 
-// @TASK P2-S1-T1 - ReservationForm 페이지 래퍼 (onSubmit 핸들러 연결)
+// @TASK P2-S1-T2 - ReservationForm 페이지 래퍼 (useReservation hook 연결)
 // @SPEC specs/screens/prelaunch/landing
 
-import { ReservationForm, ReservationFormData, ReservationFormStatus } from './ReservationForm';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ReservationForm, ReservationFormData } from './ReservationForm';
+import { useReservation } from '@/hooks/useReservation';
 
 export function PrelaunchFormWrapper() {
-  const [status, setStatus] = useState<ReservationFormStatus>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const router = useRouter();
+  const { status, error, reservation, createReservation } = useReservation();
 
-  const handleSubmit = (data: ReservationFormData) => {
-    // P2-S1-T2에서 API 연동 구현 예정
-    console.log('예약 요청:', data);
-    setStatus('idle');
-    setErrorMessage(undefined);
+  const handleSubmit = async (data: ReservationFormData) => {
+    await createReservation(data);
   };
+
+  // 성공 시 예약 완료 페이지로 이동
+  if (status === 'success' && reservation) {
+    router.push(
+      `/prelaunch/reserved?position=${reservation.queue_position}&ref=${reservation.invite_code}`
+    );
+  }
 
   return (
     <ReservationForm
       onSubmit={handleSubmit}
       status={status}
-      errorMessage={errorMessage}
+      errorMessage={error ?? undefined}
     />
   );
 }
