@@ -1,10 +1,15 @@
-// @TASK P1-R3-T1 - Rewards API
+// @TASK P1-R3-T2 - Rewards API (refactored to use lib/rewards.ts)
 // @SPEC docs/planning/prelaunch/rewards
 // @TEST __tests__/api/rewards/rewards.test.ts
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import {
+  createInitialRewards,
+  getRewardsByReservation,
+  checkAndUnlockRewards,
+  updateRewardStatus,
+} from '@/lib/rewards';
 
 const VALID_REWARD_TYPES = ['early_adopter_badge', 'priority_access'] as const;
 const VALID_STATUSES = ['pending', 'unlocked', 'redeemed'] as const;
@@ -17,6 +22,10 @@ const patchRewardSchema = z.object({
   reservation_id: z.string().min(1),
   type: z.enum(VALID_REWARD_TYPES),
   status: z.enum(VALID_STATUSES),
+});
+
+const checkUnlockSchema = z.object({
+  reservation_id: z.string().min(1),
 });
 
 // GET /api/rewards?reservation_id={id}
@@ -32,21 +41,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from('rewards')
-      .select('id, type, status, unlocked_at')
-      .eq('reservation_id', reservationId);
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch rewards' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ rewards: data });
+    const rewards = await getRewardsByReservation(reservationId);
+    return NextResponse.json({ rewards });
   } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -68,24 +64,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from('rewards')
-      .insert([
-        { reservation_id: parsed.data.reservation_id, type: 'early_adopter_badge', status: 'pending' },
-        { reservation_id: parsed.data.reservation_id, type: 'priority_access', status: 'pending' },
-      ])
-      .select();
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to create rewards' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ rewards: data }, { status: 201 });
+    const rewards = await createInitialRewards(parsed.data.reservation_id);
+    return NextResponse.json({ rewards }, { status: 201 });
   } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -107,29 +87,35 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const reward = await updateRewardStatus(
+      parsed.data.reservation_id,
+      parsed.data.type,
+      parsed.data.status
+    );
+    return NextResponse.json({ reward });
+  } catch {
+    return NextResponse.json(
+      { error: 'Reward not found' },
+      { status: 404 }
+    );
+  }
+}
 
-    const updateData: Record<string, unknown> = { status: parsed.data.status };
-    if (parsed.data.status === 'unlocked') {
-      updateData.unlocked_at = new Date().toISOString();
-    }
+// PUT /api/rewards - Check and unlock rewards based on invite count
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const parsed = checkUnlockSchema.safeParse(body);
 
-    const { data, error } = await supabase
-      .from('rewards')
-      .update(updateData)
-      .eq('reservation_id', parsed.data.reservation_id)
-      .eq('type', parsed.data.type)
-      .select()
-      .single();
-
-    if (error || !data) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Reward not found' },
-        { status: 404 }
+        { error: 'Invalid request: reservation_id is required' },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json({ reward: data });
+    const result = await checkAndUnlockRewards(parsed.data.reservation_id);
+    return NextResponse.json(result);
   } catch {
     return NextResponse.json(
       { error: 'Internal server error' },

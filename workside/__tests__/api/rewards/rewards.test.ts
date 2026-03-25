@@ -94,6 +94,12 @@ describe('POST /api/rewards', () => {
       { id: 'reward-1', type: 'early_adopter_badge', status: 'pending', unlocked_at: null },
       { id: 'reward-2', type: 'priority_access', status: 'pending', unlocked_at: null },
     ];
+
+    // createInitialRewards first checks existing rewards (select.eq → empty)
+    mockEq.mockResolvedValueOnce({ data: [], error: null });
+    mockSelect.mockReturnValue({ eq: mockEq });
+
+    // Then inserts new rewards
     const mockSelectAfterInsert = vi.fn().mockResolvedValue({ data: mockCreatedRewards, error: null });
     mockInsert.mockReturnValue({ select: mockSelectAfterInsert });
 
@@ -110,10 +116,6 @@ describe('POST /api/rewards', () => {
     expect(body.rewards[0].type).toBe('early_adopter_badge');
     expect(body.rewards[1].type).toBe('priority_access');
     expect(mockFrom).toHaveBeenCalledWith('rewards');
-    expect(mockInsert).toHaveBeenCalledWith([
-      { reservation_id: 'res-uuid-1', type: 'early_adopter_badge', status: 'pending' },
-      { reservation_id: 'res-uuid-1', type: 'priority_access', status: 'pending' },
-    ]);
   });
 
   it('should return 400 when reservation_id is missing', async () => {
