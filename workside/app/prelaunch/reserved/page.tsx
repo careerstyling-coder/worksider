@@ -72,7 +72,7 @@ function ReservedPageContent() {
           <h2 className="text-slate-900 font-semibold mb-3">초대 리워드 안내</h2>
           <p className="text-slate-600 text-sm leading-relaxed">
             친구 <strong className="text-indigo-600">5명</strong>이 내 초대 링크로 가입하면<br />
-            <strong>얼리어답터 배지</strong>와 <strong>풀 진단 우선 접근</strong> 혜택을 드립니다.
+            <strong>심화 분석(유료)</strong>을 <strong className="text-indigo-600">무료</strong>로 이용할 수 있는 기회를 드립니다!
           </p>
         </div>
 

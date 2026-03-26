@@ -33,7 +33,7 @@ export function InviteProgressBar({
         />
       </div>
       <p className="mt-3 text-slate-400 text-sm">
-        5명 초대하면 얼리어답터 배지를 받을 수 있습니다
+        5명 초대하면 심화 분석을 무료로 이용할 수 있습니다
       </p>
     </div>
   );
