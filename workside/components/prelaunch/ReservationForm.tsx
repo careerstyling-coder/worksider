@@ -3,7 +3,7 @@
 // @TASK P2-S1-T1 - 랜딩 페이지 ReservationForm
 // @SPEC specs/screens/prelaunch/landing
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 
 export type ReservationFormStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -17,6 +17,25 @@ interface ReservationFormProps {
   onSubmit: (data: ReservationFormData) => void;
   status?: ReservationFormStatus;
   errorMessage?: string;
+}
+
+function useParticipantCount() {
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/reservations/count')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.count != null) setCount(data.count);
+      })
+      .catch(() => {});
+  }, []);
+
+  return count;
+}
+
+function formatCount(n: number): string {
+  return String(n).padStart(3, '0');
 }
 
 const INDUSTRY_OPTIONS = [
@@ -46,6 +65,7 @@ export function ReservationForm({
   const [email, setEmail] = useState('');
   const [industry, setIndustry] = useState('');
   const [experienceYears, setExperienceYears] = useState('');
+  const participantCount = useParticipantCount();
 
   const isLoading = status === 'loading';
   const isSuccess = status === 'success';
@@ -58,13 +78,13 @@ export function ReservationForm({
 
   if (isSuccess) {
     return (
-      <section className="bg-white py-20 px-6">
+      <section className="bg-white py-8 px-6">
         <div className="max-w-md mx-auto text-center">
-          <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+          <div className="text-4xl mb-3">🎉</div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">
             예약이 완료되었습니다!
           </h2>
-          <p className="text-slate-500">
+          <p className="text-slate-500 text-sm">
             첫 500명 안에 포함되셨습니다. 오픈 알림을 보내드릴게요.
           </p>
         </div>
@@ -73,18 +93,18 @@ export function ReservationForm({
   }
 
   return (
-    <section className="bg-white py-20 px-6">
+    <section className="bg-white py-8 px-6">
       <div className="max-w-md mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
-            지금 예약하세요
-          </h2>
-          <p className="text-slate-500">
-            선착순 500명에게 베타 접근 권한을 드립니다
+        <div className="text-center mb-4">
+          <p className="text-sm sm:text-base font-semibold text-indigo-600 whitespace-nowrap">
+            선착순 500명에게 서비스 체험권과 특별한 혜택을 드립니다
+          </p>
+          <p className="mt-1.5 text-slate-400 text-xs sm:text-sm">
+            현재 참여자수 <span className="font-bold text-indigo-600 tabular-nums">{participantCount != null ? formatCount(participantCount) : '---'}</span>명
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           {/* 이메일 */}
           <div className="flex flex-col gap-1.5">
             <label

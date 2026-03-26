@@ -1,0 +1,67 @@
+{
+  "version": "2.0",
+  "mode": "normal",
+  "tasks_file": "docs/planning/prelaunch/06-tasks.md",
+  "project_dir": "workside",
+
+  "execution": {
+    "current_phase": 5,
+    "started_at": "2026-03-25T19:00:00Z",
+    "last_updated": "2026-03-25T23:00:00Z"
+  },
+
+  "tasks": {
+    "completed": [
+      "P0-T0.1", "P0-T0.2",
+      "P1-R1-T1", "P1-R1-T2", "P1-R2-T1", "P1-R2-T2", "P1-R3-T1", "P1-R3-T2",
+      "P2-S0-T1", "P2-S1-T1", "P2-S1-T2", "P2-S1-V",
+      "P2-S2-T1", "P2-S2-T2", "P2-S2-V",
+      "P3-S3-T1", "P3-S3-T2", "P3-S3-T3", "P3-S3-V",
+      "P3-S4-T1", "P3-S4-T2", "P3-S4-V",
+      "P4-S5-T1", "P4-S5-T2", "P4-S5-V",
+      "P5-T1"
+    ],
+    "ready": ["P5-T2"],
+    "in_progress": [],
+    "pending": [],
+    "failed": []
+  },
+
+  "checkpoints": {
+    "phase_0": {
+      "completed_at": "2026-03-25T19:00:00Z",
+      "tasks": 2,
+      "merged": true,
+      "note": "Project already bootstrapped"
+    },
+    "phase_1": {
+      "completed_at": "2026-03-25T20:30:00Z",
+      "tasks": 6,
+      "merged": true,
+      "note": "3 resources (reservations, invite_tracking, rewards) + 44 tests"
+    },
+    "phase_2": {
+      "completed_at": "2026-03-25T21:00:00Z",
+      "tasks": 7,
+      "merged": true,
+      "note": "Layout + Landing (SCR-1) + Reserved (SCR-2) + 81 tests"
+    },
+    "phase_3_4": {
+      "completed_at": "2026-03-25T22:30:00Z",
+      "tasks": 10,
+      "merged": true,
+      "note": "Invite (SCR-3) + Dashboard (SCR-4) + Admin (SCR-5) + 198 tests"
+    },
+    "phase_5_t1": {
+      "completed_at": "2026-03-25T23:00:00Z",
+      "tasks": 1,
+      "merged": true,
+      "note": "E2E tests: 37 Playwright test cases (3 spec files)"
+    }
+  },
+
+  "config": {
+    "max_parallel": 3,
+    "retry_limit": 5
+  }
+}

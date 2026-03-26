@@ -1,0 +1,114 @@
+version: "2.0"
+
+screen:
+  id: SCR-5
+  name: 관리자 예약 탭
+  route: /admin/prelaunch
+  rendering: CSR
+  layout: single-column
+  access: admin
+
+data_requirements:
+  - resource: reservations
+    needs: [id, email, industry, experience_years, queue_position, created_at]
+    aggregate:
+      total_reservations: "count(*)"
+      industry_distribution: "group_by(industry)"
+      experience_distribution: "group_by(experience_years)"
+      daily_stats: "group_by(date(created_at))"
+    filters: { period: "?period" }
+
+  - resource: invite_tracking
+    needs: [inviter_id, converted, link_clicked]
+    aggregate:
+      invite_conversion_rate: "count(converted=true) / count(link_clicked=true)"
+      top_inviters: "group_by(inviter_id).order_by(count).limit(10)"
+
+  - resource: rewards
+    needs: [status]
+    aggregate:
+      badge_count: "count(status='unlocked', type='early_adopter_badge')"
+
+components:
+  - id: header
+    type: navigation
+    position: top
+    function: 타이틀 + 기간 필터
+
+  - id: filter_buttons
+    type: filter
+    position: top
+    function: 기간 선택 (오늘/이번주/이번달)
+    options: [today, this_week, this_month]
+
+  - id: stat_cards
+    type: card-grid
+    position: main
+    function: 주요 지표 카드 (2x2)
+    data_source:
+      - { resource: reservations, field: total_reservations, label: "총 예약" }
+      - { resource: invite_tracking, field: invite_conversion_rate, label: "초대 전환율" }
+      - { resource: rewards, field: badge_count, label: "배지 획득" }
+      - { resource: invite_tracking, field: avg_invites, label: "평균 초대 수" }
+
+  - id: daily_chart
+    type: chart
+    position: main
+    function: 일별 예약 추이 (꺾은선)
+    chart_type: line
+    data_source:
+      resource: reservations
+      aggregate: daily_stats
+
+  - id: industry_chart
+    type: chart
+    position: main
+    function: 직군 분포 (막대)
+    chart_type: bar
+    data_source:
+      resource: reservations
+      aggregate: industry_distribution
+
+  - id: experience_chart
+    type: chart
+    position: main
+    function: 연차 분포 (원형)
+    chart_type: pie
+    data_source:
+      resource: reservations
+      aggregate: experience_distribution
+
+  - id: top_inviters_table
+    type: table
+    position: main
+    function: 상위 초대자 10명
+    data_source:
+      resource: invite_tracking
+      aggregate: top_inviters
+    columns: [rank, email, successful_invites, conversion_rate]
+
+  - id: csv_export
+    type: button
+    position: bottom
+    function: CSV 내보내기
+    interactions:
+      - trigger: click
+        action: download_csv
+        data: reservations
+
+tests:
+  - name: 초기 로드
+    when: 관리자 접속
+    then: [4개 지표 카드 표시, 차트 3개 표시, 상위 초대자 테이블 표시]
+
+  - name: 기간 필터
+    when: "이번주" 필터 선택
+    then: [모든 데이터 이번주 기준으로 갱신]
+
+  - name: CSV 내보내기
+    when: 내보내기 버튼 클릭
+    then: [전체 예약 데이터 CSV 다운로드]
+
+  - name: 비관리자 접근
+    when: 일반 사용자로 접속
+    then: [접근 거부, 리다이렉트]

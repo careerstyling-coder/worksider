@@ -1,59 +1,96 @@
-// @TASK P2-S1-T1 - 랜딩 페이지 HeroSection
+'use client';
+
+// @TASK P2-S1-T1 - 랜딩 페이지 HeroSection (공감 메시지 롤링, 라이트 테마)
 // @SPEC specs/screens/prelaunch/landing
 
-export function HeroSection() {
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 min-h-[85vh] flex flex-col items-center justify-center px-6 py-24 text-center">
-      {/* 배경 장식 */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl" />
-      </div>
+import { useState, useEffect, useCallback } from 'react';
 
-      <div className="relative z-10 max-w-2xl mx-auto">
+const EMPATHY_SLIDES = [
+  {
+    hook: '같은 팀인데,\n왜 나만 다르게 일할까?',
+    body: '매일 반복되는 회의, 끝없는 슬랙 메시지.\n그 안에서 나만의 리듬을 찾지 못한 당신에게.',
+    cta: '당신의 일 스타일을 먼저 발견하세요.',
+  },
+  {
+    hook: '열심히 했는데,\n왜 인정받지 못할까?',
+    body: '일하는 방식이 다를 뿐인데\n성과가 안 보이는 건 아닙니다.',
+    cta: '당신의 일하는 방식엔 이유가 있습니다.',
+  },
+  {
+    hook: '3년차, 5년차, 10년차...\n나는 성장하고 있을까?',
+    body: '연차는 쌓이는데 방향이 안 보일 때,\n먼저 나를 아는 것부터 시작합니다.',
+    cta: '나만의 Work DNA를 발견하세요.',
+  },
+];
+
+const INTERVAL_MS = 5000;
+
+export function HeroSection() {
+  const [current, setCurrent] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const goTo = useCallback((index: number) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrent(index);
+      setIsTransitioning(false);
+    }, 400);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      goTo((current + 1) % EMPATHY_SLIDES.length);
+    }, INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [current, goTo]);
+
+  const slide = EMPATHY_SLIDES[current];
+
+  return (
+    <section className="bg-white px-6 pt-10 pb-6 text-center">
+      <div className="max-w-2xl mx-auto">
         {/* 배지 */}
-        <span className="inline-block mb-6 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-sm font-medium tracking-wide">
+        <span className="inline-block mb-5 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-600 text-sm font-medium tracking-wide">
           Workside 프리론칭
         </span>
 
-        {/* 메인 타이틀 */}
-        <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight mb-6">
-          당신의 일 스타일을 먼저
-        </h1>
-
-        {/* 서브타이틀 */}
-        <p className="text-lg sm:text-xl text-slate-300 leading-relaxed mb-10">
-          첫 500명을 위한 특별한 기회
-        </p>
-
-        <p className="text-slate-400 text-base">
-          나만의 Work Style DNA를 먼저 발견하고,<br className="hidden sm:block" />
-          같은 성향의 동료들과 연결되세요.
-        </p>
-      </div>
-
-      {/* 스크롤 유도 */}
-      <div
-        data-testid="scroll-hint"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500"
-      >
-        <span className="text-xs tracking-widest uppercase">스크롤</span>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          className="animate-bounce"
-          aria-hidden="true"
+        {/* 공감 메시지 롤링 */}
+        <div
+          data-testid="empathy-slide"
+          className={`min-h-[160px] flex flex-col justify-center transition-opacity duration-400 ${
+            isTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
         >
-          <path
-            d="M10 3v14M10 17l-5-5M10 17l5-5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-4 whitespace-pre-line">
+            {slide.hook}
+          </h1>
+
+          <p className="text-base sm:text-lg text-slate-500 leading-relaxed mb-4 whitespace-pre-line">
+            {slide.body}
+          </p>
+
+          <p className="text-indigo-600 text-base font-semibold">
+            {slide.cta}
+          </p>
+        </div>
+
+        {/* 인디케이터 */}
+        <div className="flex items-center justify-center gap-2 mt-4" role="tablist">
+          {EMPATHY_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={i === current}
+              aria-label={`슬라이드 ${i + 1}`}
+              onClick={() => goTo(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === current
+                  ? 'w-8 bg-indigo-500'
+                  : 'w-2 bg-slate-200 hover:bg-slate-300'
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

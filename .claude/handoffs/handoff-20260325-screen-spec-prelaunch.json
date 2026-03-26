@@ -1,0 +1,61 @@
+{
+  "created_at": "2026-03-25T18:36:27",
+  "completed_skill": "screen-spec",
+  "next_skill": "tasks-generator",
+  "context_summary": {
+    "project": "Workside — 직장인 성장 커뮤니티 플랫폼",
+    "topic": "사전 예약 페이지 화면 명세 (프리론칭)",
+    "cogito_statement": "나는 Workside의 첫 사용자들과 관계를 맺고 그들의 행동(등록, 공유)을 통해 서비스의 가능성을 검증하고 싶다.",
+    "features": [
+      {
+        "id": "FEAT-1",
+        "name": "사전 예약 랜딩 페이지",
+        "description": "공감 메시지 → DNA 소개 → 예약폼(이메일+직군+연차). 초대 링크 방문자에게 개인화 메시지."
+      },
+      {
+        "id": "FEAT-2",
+        "name": "초대 바이럴 시스템",
+        "description": "5명 초대 성공 시 얼리어답터 배지 + 풀 진단 우선 접근. 링크 복사 + SNS 공유 + OG 카드."
+      },
+      {
+        "id": "FEAT-3",
+        "name": "행동 추적 대시보드",
+        "description": "기존 admin에 예약 탭 통합. 예약수, 초대전환율, 직군분포, 일별추이, 톱초대자."
+      }
+    ],
+    "screens": [
+      {"id": "SCR-1", "name": "랜딩 페이지", "path": "/prelaunch", "spec": "specs/screens/prelaunch/landing.yaml"},
+      {"id": "SCR-2", "name": "예약 완료", "path": "/prelaunch/reserved", "spec": "specs/screens/prelaunch/reserved.yaml"},
+      {"id": "SCR-3", "name": "초대 랜딩", "path": "/?ref={code}", "spec": "specs/screens/prelaunch/invite-landing.yaml"},
+      {"id": "SCR-4", "name": "예약자 대시보드", "path": "/prelaunch/my-reservation", "spec": "specs/screens/prelaunch/my-reservation.yaml"},
+      {"id": "SCR-5", "name": "관리자 예약 탭", "path": "/admin/prelaunch", "spec": "specs/screens/prelaunch/admin-prelaunch.yaml"}
+    ],
+    "domain_resources": ["reservations", "invite_tracking", "rewards"],
+    "shared_components": ["HeroSection", "DNAIntroSection", "ReservationForm", "InviteLinkCard", "InviteProgressBar", "SocialShareButtons"],
+    "tech_stack": {
+      "frontend": "Next.js (TypeScript)",
+      "backend": "Supabase (PostgreSQL)",
+      "deployment": "Vercel",
+      "email": "Resend",
+      "og_image": "@vercel/og"
+    },
+    "coverage": {
+      "reservations": "80%",
+      "invite_tracking": "50%",
+      "rewards": "50%",
+      "note": "미사용 필드는 백엔드 내부 관리용"
+    }
+  },
+  "output_files": [
+    "specs/screens/prelaunch/landing.yaml",
+    "specs/screens/prelaunch/reserved.yaml",
+    "specs/screens/prelaunch/invite-landing.yaml",
+    "specs/screens/prelaunch/my-reservation.yaml",
+    "specs/screens/prelaunch/admin-prelaunch.yaml",
+    "specs/screens/index.yaml",
+    "specs/domain/resources.yaml",
+    "specs/shared/components.yaml",
+    "specs/shared/types.yaml"
+  ],
+  "pipeline": "neurion → cogito → socrates → screen-spec(완료) → tasks-generator(다음)"
+}
