@@ -70,20 +70,10 @@ function ReservedPageContent() {
 
         <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
           <h2 className="text-slate-900 font-semibold mb-3">초대 리워드 안내</h2>
-          <ul className="space-y-2 text-slate-600 text-sm">
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">•</span>
-              <span><strong>1명 초대</strong> — 1개월 무료 이용권</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">•</span>
-              <span><strong>3명 초대</strong> — 3개월 무료 이용권 + 프리미엄 배지</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">•</span>
-              <span><strong>5명 초대</strong> — 얼리어답터 배지 + 평생 할인 혜택</span>
-            </li>
-          </ul>
+          <p className="text-slate-600 text-sm leading-relaxed">
+            친구 <strong className="text-indigo-600">5명</strong>이 내 초대 링크로 가입하면<br />
+            <strong>얼리어답터 배지</strong>와 <strong>풀 진단 우선 접근</strong> 혜택을 드립니다.
+          </p>
         </div>
 
         <SocialShareButtons
