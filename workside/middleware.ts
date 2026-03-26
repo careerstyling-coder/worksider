@@ -70,8 +70,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
   // 보호 라우트: 미인증 시 /signup으로 리다이렉트
   if (isProtectedRoute(pathname) && !user) {
     const url = request.nextUrl.clone();
