@@ -22,9 +22,9 @@ export async function sendReservationEmail({
   const inviteLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://workside.vercel.app'}/prelaunch?ref=${inviteCode}`;
 
   await transporter.sendMail({
-    from: `"Workside" <${process.env.GMAIL_USER}>`,
+    from: `"workside" <${process.env.GMAIL_USER}>`,
     to,
-    subject: `🎉 Workside 사전 예약 완료! (${queuePosition}번째)`,
+    subject: `🎉 workside 사전 예약 완료! (${queuePosition}번째)`,
     html: `
       <div style="max-width:480px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;">
         <div style="text-align:center;padding:32px 24px;background:#f8fafc;border-radius:16px;">
@@ -52,7 +52,7 @@ export async function sendReservationEmail({
         </div>
 
         <div style="text-align:center;padding:24px;border-top:1px solid #e2e8f0;">
-          <p style="color:#94a3b8;font-size:12px;margin:0;">© 2026 Workside. All rights reserved.</p>
+          <p style="color:#94a3b8;font-size:12px;margin:0;">© 2026 workside. All rights reserved.</p>
         </div>
       </div>
     `,
