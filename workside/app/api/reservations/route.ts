@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: '잘못된 요청입니다' },
+      { error: '잘못된 요청입니다', debug: message },
       { status: 400 }
     );
   }
