@@ -1,3 +1,5 @@
+'use client';
+
 // @TASK P2-S0-T1 - Prelaunch 전용 레이아웃
 // @SPEC docs/planning/prelaunch/layout
 
