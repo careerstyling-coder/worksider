@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createReservation } from '@/lib/reservations';
+import { sendReservationEmail } from '@/lib/email';
 
 // -- Validation schemas --
 
@@ -31,6 +32,13 @@ export async function POST(request: Request) {
     }
 
     const reservation = await createReservation(parsed.data);
+
+    // 예약 확인 이메일 발송 (실패해도 예약은 성공 처리)
+    sendReservationEmail({
+      to: reservation.email,
+      queuePosition: reservation.queue_position,
+      inviteCode: reservation.invite_code,
+    }).catch(() => {});
 
     return NextResponse.json(
       {
