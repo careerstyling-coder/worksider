@@ -14,18 +14,16 @@ export function InviteProgressBar({
   const isComplete = current >= total;
 
   return (
-    <div className="bg-bg-secondary border border-white/10 rounded-2xl p-6">
+    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-white font-semibold">친구 초대 현황</span>
-        <span className="text-white/70 text-sm">{current}/{total}</span>
+        <span className="text-slate-900 font-semibold">친구 초대 현황</span>
+        <span className="text-slate-500 text-sm">{current}/{total}</span>
       </div>
-      <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+      <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
         <div
           data-testid="progress-fill"
           className={`h-full rounded-full transition-all duration-500 ${
-            isComplete
-              ? 'bg-green-500 complete'
-              : 'bg-accent-neon'
+            isComplete ? 'bg-green-500 complete' : 'bg-indigo-500'
           }`}
           style={{ width: `${percentage}%` }}
           role="progressbar"
@@ -34,7 +32,7 @@ export function InviteProgressBar({
           aria-valuemax={total}
         />
       </div>
-      <p className="mt-3 text-white/50 text-sm">
+      <p className="mt-3 text-slate-400 text-sm">
         5명 초대하면 얼리어답터 배지를 받을 수 있습니다
       </p>
     </div>

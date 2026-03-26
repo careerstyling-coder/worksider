@@ -2,7 +2,6 @@
 
 // @TASK P2-S2-T1 - SNS 공유 버튼 컴포넌트
 // @SPEC specs/screens/prelaunch/reserved
-// @NOTE P2-S2-T2에서 실제 SNS API 연동 예정
 
 interface SocialShareButtonsProps {
   inviteCode: string;
@@ -19,7 +18,7 @@ export function SocialShareButtons({
 }: SocialShareButtonsProps) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-white/70 text-sm font-medium">공유하기</p>
+      <p className="text-slate-500 text-sm font-medium">친구에게 공유하기</p>
       <div className="flex gap-3">
         <button
           onClick={onKakaoClick}
@@ -30,14 +29,14 @@ export function SocialShareButtons({
         </button>
         <button
           onClick={onTwitterClick}
-          className="flex-1 flex items-center justify-center gap-2 bg-black border border-white/20 text-white font-semibold py-3 px-4 rounded-xl hover:bg-white/5 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white font-semibold py-3 px-4 rounded-xl hover:bg-slate-800 transition-colors"
           aria-label="트위터(X)로 공유"
         >
           <span>트위터(X)</span>
         </button>
         <button
           onClick={onCopyClick}
-          className="flex-1 flex items-center justify-center gap-2 bg-white/10 text-white font-semibold py-3 px-4 rounded-xl hover:bg-white/15 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
           aria-label="링크 복사"
         >
           <span>링크 복사</span>

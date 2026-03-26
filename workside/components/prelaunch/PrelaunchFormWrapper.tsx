@@ -22,7 +22,7 @@ export function PrelaunchFormWrapper({ refCode }: PrelaunchFormWrapperProps) {
   // 성공 시 예약 완료 페이지로 이동
   if (status === 'success' && reservation) {
     router.push(
-      `/prelaunch/reserved?position=${reservation.queue_position}&ref=${reservation.invite_code}`
+      `/prelaunch/reserved?position=${reservation.queue_position}&ref=${reservation.invite_code}&reservation_id=${reservation.id}`
     );
   }
 

@@ -7,14 +7,15 @@ interface WelcomeMessageProps {
 
 export function WelcomeMessage({ queuePosition }: WelcomeMessageProps) {
   return (
-    <div className="text-center py-8">
-      <h1 className="text-3xl font-bold text-white mb-4">예약되었습니다!</h1>
-      <p className="text-white/70 text-lg">
+    <div className="text-center py-6">
+      <div className="text-4xl mb-3">🎉</div>
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">예약이 완료되었습니다!</h1>
+      <p className="text-slate-500 text-lg">
         첫 500명 중{' '}
-        <span className="text-accent-neon font-bold text-4xl">
+        <span className="text-indigo-600 font-bold text-3xl">
           {queuePosition}번
         </span>
-        입니다
+        째 입니다
       </p>
     </div>
   );

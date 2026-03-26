@@ -1,6 +1,6 @@
 'use client';
 
-// @TASK P2-S2-T2 - 예약 완료 페이지 (API 연동)
+// @TASK P2-S2-T2 - 예약 완료 페이지 (라이트 테마)
 // @SPEC specs/screens/prelaunch/reserved
 
 import { Suspense, useEffect, useCallback } from 'react';
@@ -60,20 +60,29 @@ function ReservedPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-bg-primary px-4 py-12">
-      <div className="max-w-lg mx-auto flex flex-col gap-6">
+    <div className="min-h-screen bg-white px-4 py-8">
+      <div className="max-w-lg mx-auto flex flex-col gap-5">
         <WelcomeMessage queuePosition={queuePosition} />
 
         <InviteLinkCard inviteCode={inviteCode} />
 
         <InviteProgressBar current={current} total={total} />
 
-        <div className="bg-bg-secondary border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold mb-2">리워드 안내</h2>
-          <ul className="space-y-2 text-white/60 text-sm">
-            <li>- 1명 초대: 1개월 무료 이용권</li>
-            <li>- 3명 초대: 3개월 무료 이용권 + 프리미엄 배지</li>
-            <li>- 5명 초대: 얼리어답터 배지 + 평생 할인 혜택</li>
+        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+          <h2 className="text-slate-900 font-semibold mb-3">초대 리워드 안내</h2>
+          <ul className="space-y-2 text-slate-600 text-sm">
+            <li className="flex items-start gap-2">
+              <span className="text-indigo-500 mt-0.5">•</span>
+              <span><strong>1명 초대</strong> — 1개월 무료 이용권</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-indigo-500 mt-0.5">•</span>
+              <span><strong>3명 초대</strong> — 3개월 무료 이용권 + 프리미엄 배지</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-indigo-500 mt-0.5">•</span>
+              <span><strong>5명 초대</strong> — 얼리어답터 배지 + 평생 할인 혜택</span>
+            </li>
           </ul>
         </div>
 
@@ -84,7 +93,7 @@ function ReservedPageContent() {
           onCopyClick={handleCopyClick}
         />
       </div>
-    </main>
+    </div>
   );
 }
 
