@@ -27,6 +27,17 @@ function isAdminRoute(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // prelaunch 및 공개 경로는 인증 불필요 — 바로 통과
+  if (
+    pathname.startsWith('/prelaunch') ||
+    pathname.startsWith('/api/') ||
+    pathname === '/'
+  ) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
